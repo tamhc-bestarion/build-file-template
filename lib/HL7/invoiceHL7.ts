@@ -187,8 +187,8 @@ export function formatAsInvoiceHL7(data: DataType, duplicateCount: number = 1): 
       `ZML|${ZmlRender(modifiedData)}`,
     ];
     
-    blocks.push(lines.join("\r\n"));
+    blocks.push(lines.join('\r'));
   }
   
-  return blocks.join("\r\n").split("\r\n");
+  return blocks.join('\r').split('\r');
 } 

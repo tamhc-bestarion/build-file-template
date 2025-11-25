@@ -87,7 +87,7 @@ export default function InvoiceTable({
   };
   
   const formattedData = getFormattedData();
-  const resultHL7Text = formattedData.join("\r\n")
+  const resultHL7Text = formattedData.join('\r')
 
   return (
     <>
