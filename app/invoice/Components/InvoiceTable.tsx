@@ -66,6 +66,12 @@ export default function InvoiceTable({
     onValueChange(key, value);
   };
 
+  const handleTextValueChange = (value: string) => {
+    console.log('change');
+    console.log(value);
+    // onValueChange(key, value);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent, key: string) => {
     if (e.key === "Enter") {
       setEditingCell(null);
@@ -108,6 +114,16 @@ export default function InvoiceTable({
             <option value="Create-100k">Create 100k item</option>
             <option value="Create-200k">Create 200k item</option>
           </select>
+          <textarea
+            // value={value}
+            onChange={(e) => handleTextValueChange(e.target.value)}
+            onKeyDown={(e) => handleTextValueChange(e.target.value)}
+            onBlur={handleBlur}
+            className="w-full p-1 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            // rows={Math.max(1, Math.ceil(value.length / 40))}
+            autoFocus
+            style={{ minHeight: "24px", maxHeight: "120px" }}
+          />
         </form>
         <table className="w-full border-collapse table-fixed">
           <thead>
