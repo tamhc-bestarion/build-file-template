@@ -158,37 +158,67 @@ function ZmlRender(invData: InvoiceDataType): string {
   return valuesDoubled.join("");
 }
 
-export function formatAsInvoiceHL7(data: DataType, duplicateCount: number = 1): string[] {
+// numberOfInvoices, numberOfPriceHistograms, numberOfItems
+export function formatAsInvoiceHL7(data: DataType, numberOfInvoices: number = 1, numberOfPriceHistograms: number = 1, numberOfItems: number = 1): string[] {
   const invoiceData = data as InvoiceDataType;
   const highlightedFields: (keyof InvoiceDataType)[] = [
     "Invoice ID",
-    "INV Number",
+    "Invoice Date", // INV Date
+    "Invoice Number",
+    "Corporation Account Number",
+    "Cost Center Account Number",
+    "Expense Code Account Number",
     "PO Number",
-    "Vendor Number",
-    "Org Item ID"
+    "Vendor Code",
+    "Vendor Remit Name",
+    "PO Line Record ID",
+    "PO Line Record IDB",
+    "Organization Item ID"
   ];
 
   let blocks: string[] = [];
-  for (let i = 1; i <= duplicateCount; i++) {
-    const modifiedData = { ...invoiceData };
-    highlightedFields.forEach((field) => {
-      if (field === "INV Line Number") {
-        const baseNumber = parseInt(invoiceData[field]) || 1;
-        modifiedData[field] = (baseNumber + i - 1).toString();
-      } else {
-        modifiedData[field] =
-          invoiceData[field] + (i > 1 ? `-${i-1}` : "");
-      }
-    });
+  const modifiedData = { ...invoiceData };
 
-    const lines = [
-      `MSH|^~\\\&|SupplyChain|001|||||MI|54c8150000000001|P|2.5`,
-      `ZMI|${ZmiRender(modifiedData)}`,
-      `ZML|${ZmlRender(modifiedData)}`,
-    ];
-    
-    blocks.push(lines.join('\r'));
+  // for (let i = 1; i <= duplicateCount; i++) {
+  //   const modifiedData = { ...invoiceData };
+  //   highlightedFields.forEach((field) => {
+  //     const baseNumber = parseInt(invoiceData[field]) || 1;
+  //     switch (field) {
+  //       case "Invoice Number":
+  //         modifiedData[field] = (baseNumber + i - 1).toString();
+  //         break;
+  //       case "PO Number":
+  //         const unit = Math.ceil(duplicateCount / poNumberCount);
+  //         const poNumber =  Math.ceil(duplicateCount / unit);
+  //         modifiedData[field] = String(baseNumber) + String(poNumber);
+  //         break;
+  //       default:
+  //         modifiedData[field] = invoiceData[field] + (i > 1 ? `-${i-1}` : "");
+  //     }
+  //   });
+
+  //   const lines = [
+  //     `MSH|^~\\\&|SupplyChain|001|||||MI|54c8150000000001|P|2.5`,
+  //     `ZMI|${ZmiRender(modifiedData)}`,
+  //     `ZML|${ZmlRender(modifiedData)}`,
+  //   ];
+
+  //   blocks.push(lines.join('\r'));
+  // }
+
+  const lines = [
+    `MSH|^~\\\&|SupplyChain|001|||||MI|54c8150000000001|P|2.5`,
+    `ZMI|${ZmiRender(modifiedData)}`,
+    // `ZML|${ZmlRender(modifiedData)}`,
+  ];
+  for (let i = 1; i <= numberOfInvoices; i++) {
+    modifiedData["Invoice Line Number"] = i;
+    const invoiceLineId = (parseInt(modifiedData["Invoice Line ID"]) || 1) + 1;
+    modifiedData["Invoice Line ID"] = invoiceLineId;
+    lines.push(`ZML|${ZmlRender(modifiedData)}`)
   }
+
+  blocks.push(lines.join('\r'));
   
   return blocks.join('\r').split('\r');
 } 

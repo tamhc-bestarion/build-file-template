@@ -28,11 +28,19 @@ export default function InvoiceTable({
   activeFileType,
 }: InvoiceTableProps) {
   const highlightedFields = [
-    "Invoice ID",
-    "INV Number",
+    "Invoice ID", // Invoice ID
+    "Invoice Date", // INV Date
+    "Invoice Number", // INV Number
+    "Corporation Account Number", // Corp Number
+    "Cost Center Account Number", // Cost Center
+    "Expense Code Account Number",  // Expense Code
     "PO Number",
-    "Vendor Number",
-    "Org Item ID"
+    "PO Line Number",
+    "Vendor Code", // Vendor Number
+    "Vendor Remit Name", // Vendor Name
+    "PO Line Record ID",  // PO ID DB
+    "PO Line Record IDB",
+    "Organization Item ID"
   ];
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
@@ -51,6 +59,9 @@ export default function InvoiceTable({
 
   const [showModal, setShowModal] = useState(false);
   const [showViewDataModal, setShowViewDataModal] = useState(false);
+  const [numberOfInvoices, setNumberOfInvoices] = useState(1);
+  const [numberOfPriceHistograms, setNumberOfPriceHistograms] = useState(1);
+  const [numberOfItems, setNumberOfItems] = useState(1);
 
   const openViewDataModal = () => setShowViewDataModal(true);
   const closeViewDataModal = () => setShowViewDataModal(false);
@@ -62,8 +73,24 @@ export default function InvoiceTable({
     setEditingCell(key);
   };
 
+  const handleNumberOfInvoices = (number: int) => {
+    setNumberOfInvoices(parseInt(number));
+  };
+
+  const handleNumberOfPriceHistograms = (number: int) => {
+    setNumberOfPriceHistograms(parseInt(number));
+  };
+
+  const handleNumberOfItems = (number: int) => {
+    setNumberOfItems(parseInt(number));
+  };
+
   const handleValueChange = (key: string, value: string) => {
     onValueChange(key, value);
+  };
+
+  const handleTextValueChange = (value: string) => {
+    handleNumberOfInvoice(value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, key: string) => {
@@ -80,7 +107,7 @@ export default function InvoiceTable({
     const duplicateCount = duplicateOption === "Normal" ? 1 : duplicateOption;
     switch (activeFileType) {
       case "HL7":
-        return formatAsInvoiceHL7(data, duplicateCount);
+        return formatAsInvoiceHL7(data, numberOfInvoices, numberOfPriceHistograms, numberOfItems);
       default:
         return formatAsPipeDelimited(data, duplicateCount);
     }
@@ -93,21 +120,50 @@ export default function InvoiceTable({
     <>
       <div className="w-full">
         <form className="max-w-xs mb-[10px] flex items-center gap-4">
-          <select
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            value={
-              duplicateOption === "Normal"
-                ? "Normal"
-                : `Create-${formatNumberShort(duplicateOption)}`
-            }
-            onChange={handleDuplicateChange}
-          >
-            <option value="Normal">Normal</option>
-            <option value="Create-10k">Create 10k item</option>
-            <option value="Create-50k">Create 50k item</option>
-            <option value="Create-100k">Create 100k item</option>
-            <option value="Create-200k">Create 200k item</option>
-          </select>
+          <div class="flex flex-row w-full min-w-full">
+            <div class="basis-1/4">
+              <div class="w-full max-w-sm relative mt-4 ml-2 mr-2">
+                <label class="block mb-2 text-sm text-slate-600">Number of Invoices</label>
+                <input type="email"
+                  onChange={(e) => handleNumberOfInvoices(e.target.value)} onKeyDown={(e) => handleNumberOfInvoices(e.target.value)} onBlur={handleBlur}
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
+                />
+                {/*<select
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  value={
+                    duplicateOption === "Normal"
+                      ? "Normal"
+                      : `Create-${formatNumberShort(duplicateOption)}`
+                  }
+                  onChange={handleDuplicateChange}
+                >
+                  <option value="Normal">Normal</option>
+                  <option value="Create-10k">Create 10k item</option>
+                  <option value="Create-50k">Create 50k item</option>
+                  <option value="Create-100k">Create 100k item</option>
+                  <option value="Create-200k">Create 200k item</option>
+                </select>*/}
+              </div>
+            </div>
+            {/*<div class="basis-1/4">
+              <div class="w-full max-w-sm relative mt-4 ml-2 mr-2">
+                <label class="block mb-2 text-sm text-slate-600">Number of Price Histograms</label>
+                <input type="email"
+                  onChange={(e) => handleNumberOfPriceHistograms(e.target.value)} onKeyDown={(e) => handleNumberOfPriceHistograms(e.target.value)} onBlur={handleBlur}
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
+                />
+              </div>
+            </div>
+            <div class="basis-1/4">
+              <div class="w-full max-w-sm min-w-[180px] relative mt-4 ml-2 mr-2">
+                <label class="block mb-2 text-sm text-slate-600">Number of Items</label>
+                <input type="email"
+                  onChange={(e) => handleNumberOfItems(e.target.value)} onKeyDown={(e) => handleNumberOfItems(e.target.value)} onBlur={handleBlur}
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
+                />
+              </div>
+            </div>*/}
+          </div>
         </form>
         <table className="w-full border-collapse table-fixed">
           <thead>
@@ -121,6 +177,9 @@ export default function InvoiceTable({
             </tr>
           </thead>
           <tbody>
+            {/*{Array.from({ length: numberOfInvoices }).map((_, idx) => (
+              <div>{idx}</div>
+            ))}*/}
             {Object.entries(data).map(([key, value], index) => (
               <tr
                 key={key}
