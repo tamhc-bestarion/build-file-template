@@ -29,10 +29,17 @@ export default function InvoiceTable({
 }: InvoiceTableProps) {
   const highlightedFields = [
     "Invoice ID",
-    "INV Number",
+    "Invoice Date", // INV Date
+    "Invoice Number",
+    "Corporation Account Number",
+    "Cost Center Account Number",
+    "Expense Code Account Number",
     "PO Number",
-    "Vendor Number",
-    "Org Item ID"
+    "Vendor Code",
+    "Vendor Remit Name",
+    "PO Line Record ID",
+    "PO Line Record IDB",
+    "Organization Item ID"
   ];
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
@@ -51,6 +58,7 @@ export default function InvoiceTable({
 
   const [showModal, setShowModal] = useState(false);
   const [showViewDataModal, setShowViewDataModal] = useState(false);
+  const [numberOfInvLine, setNumberOfInvLine] = useState(1);
 
   const openViewDataModal = () => setShowViewDataModal(true);
   const closeViewDataModal = () => setShowViewDataModal(false);
@@ -62,6 +70,10 @@ export default function InvoiceTable({
     setEditingCell(key);
   };
 
+  const handleNumberOfInvLine = (number: int) => {
+    setNumberOfInvLine(number);
+  };
+
   const handleValueChange = (key: string, value: string) => {
     onValueChange(key, value);
   };
@@ -69,6 +81,7 @@ export default function InvoiceTable({
   const handleTextValueChange = (value: string) => {
     console.log('change');
     console.log(value);
+    handleNumberOfInvLine(value);
     // onValueChange(key, value);
   };
 
@@ -86,7 +99,7 @@ export default function InvoiceTable({
     const duplicateCount = duplicateOption === "Normal" ? 1 : duplicateOption;
     switch (activeFileType) {
       case "HL7":
-        return formatAsInvoiceHL7(data, duplicateCount);
+        return formatAsInvoiceHL7(data, duplicateCount, numberOfInvLine);
       default:
         return formatAsPipeDelimited(data, duplicateCount);
     }
@@ -137,6 +150,9 @@ export default function InvoiceTable({
             </tr>
           </thead>
           <tbody>
+            {Array.from({ length: numberOfInvLine }).map((_, idx) => (
+              <div>{idx}</div>
+            ))}
             {Object.entries(data).map(([key, value], index) => (
               <tr
                 key={key}
