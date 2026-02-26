@@ -224,6 +224,7 @@ export function formatAsInvoiceHL7(data: DataType, numberOfInvoiceLineNumbers: n
   for (let i = 1; i <= numberOfInvoices; i++) {
     modifiedData['Invoice ID'] = incrementWithPrefix(modifiedData['Invoice ID']);
     modifiedData['Invoice Number'] = incrementWithPrefix(modifiedData['Invoice Number']);
+    modifiedData['PO Line Number'] = incrementWithPrefix(modifiedData['PO Line Number']);
     const lines = [
       `MSH|^~\\\&|SupplyChain|001|||||MI|54c8150000000001|P|2.5`,
       `ZMI|${ZmiRender(modifiedData)}`,
