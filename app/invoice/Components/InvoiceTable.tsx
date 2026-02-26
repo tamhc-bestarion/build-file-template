@@ -59,8 +59,8 @@ export default function InvoiceTable({
 
   const [showModal, setShowModal] = useState(false);
   const [showViewDataModal, setShowViewDataModal] = useState(false);
+  const [numberOfInvoiceLineNumbers, setNumberOfInvoiceLineNumbers] = useState(1);
   const [numberOfInvoices, setNumberOfInvoices] = useState(1);
-  const [numberOfPriceHistograms, setNumberOfPriceHistograms] = useState(1);
   const [numberOfItems, setNumberOfItems] = useState(1);
 
   const openViewDataModal = () => setShowViewDataModal(true);
@@ -73,12 +73,12 @@ export default function InvoiceTable({
     setEditingCell(key);
   };
 
-  const handleNumberOfInvoices = (number: int) => {
-    setNumberOfInvoices(parseInt(number));
+  const handleNumberOfInvoiceLineNumbers = (number: int) => {
+    setNumberOfInvoiceLineNumbers(parseInt(number));
   };
 
-  const handleNumberOfPriceHistograms = (number: int) => {
-    setNumberOfPriceHistograms(parseInt(number));
+  const handleNumberOfInvoices = (number: int) => {
+    setNumberOfInvoices(parseInt(number));
   };
 
   const handleNumberOfItems = (number: int) => {
@@ -107,7 +107,7 @@ export default function InvoiceTable({
     const duplicateCount = duplicateOption === "Normal" ? 1 : duplicateOption;
     switch (activeFileType) {
       case "HL7":
-        return formatAsInvoiceHL7(data, numberOfInvoices, numberOfPriceHistograms, numberOfItems);
+        return formatAsInvoiceHL7(data, numberOfInvoiceLineNumbers, numberOfInvoices, numberOfItems);
       default:
         return formatAsPipeDelimited(data, duplicateCount);
     }
@@ -122,10 +122,10 @@ export default function InvoiceTable({
         <form className="max-w-xs mb-[10px] flex items-center gap-4">
           <div class="flex flex-row w-full min-w-full">
             <div class="basis-1/4">
-              <div class="w-full max-w-sm relative mt-4 ml-2 mr-2">
-                <label class="block mb-2 text-sm text-slate-600">Number of Invoices</label>
+              <div class="w-full max-w-sm relative mt-4 mr-2">
+                <label class="block mb-2 text-sm text-slate-600">Number of Invoice Line Numbers</label>
                 <input type="email"
-                  onChange={(e) => handleNumberOfInvoices(e.target.value)} onKeyDown={(e) => handleNumberOfInvoices(e.target.value)} onBlur={handleBlur}
+                  onChange={(e) => handleNumberOfInvoiceLineNumbers(e.target.value)} onKeyDown={(e) => handleNumberOfInvoiceLineNumbers(e.target.value)} onBlur={handleBlur}
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
                 />
                 {/*<select
@@ -145,16 +145,16 @@ export default function InvoiceTable({
                 </select>*/}
               </div>
             </div>
-            {/*<div class="basis-1/4">
+            <div class="basis-1/4">
               <div class="w-full max-w-sm relative mt-4 ml-2 mr-2">
-                <label class="block mb-2 text-sm text-slate-600">Number of Price Histograms</label>
+                <label class="block mb-2 text-sm text-slate-600">Number of Invoices</label>
                 <input type="email"
-                  onChange={(e) => handleNumberOfPriceHistograms(e.target.value)} onKeyDown={(e) => handleNumberOfPriceHistograms(e.target.value)} onBlur={handleBlur}
+                  onChange={(e) => handleNumberOfInvoices(e.target.value)} onKeyDown={(e) => handleNumberOfInvoices(e.target.value)} onBlur={handleBlur}
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
                 />
               </div>
             </div>
-            <div class="basis-1/4">
+            {/*<div class="basis-1/4">
               <div class="w-full max-w-sm min-w-[180px] relative mt-4 ml-2 mr-2">
                 <label class="block mb-2 text-sm text-slate-600">Number of Items</label>
                 <input type="email"
