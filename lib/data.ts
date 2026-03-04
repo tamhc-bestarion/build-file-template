@@ -63,14 +63,38 @@ export const itemMasterData: IMDataType = {
   "Location ID": "2087"
 }
 
+// const highlightedFields: (keyof InvoiceDataType)[] = [
+//     "Invoice ID",
+//     "Invoice Date", // INV Date
+//     "Invoice Number",
+//     "Corporation Account Number",
+//     "Cost Center Account Number",
+//     "Expense Code Account Number",
+//     "PO Number",
+//     "Vendor Code",
+//     "Vendor Remit Name",
+//     "PO Line Record ID",
+//     "PO Line Record IDB",
+//     "Organization Item ID"
+//   ];
+
 export const invoiceData: InvoiceDataType = {
   "Invoice ID": "2500837", // column_0 -- 2500837
-  "Invoice IDB": "1270", // column_1 -- 1270
-  "Invoice Number": "44966978", // column_2 -- 44966978
   "Invoice Date": "20141007000000", // column_3 -- 20141007000000
-  "Invoice Type" : "P", // column_4 -- P
+  "Invoice Number": "44966978", // column_2 -- 44966978
   "Corporation Account Number" : "10", // column_5 - 10
+  "PO Number" : "325630", // column_21 -- 325630
   "Vendor Code" : "2271", // column_6 -- 2271
+  "Vendor Remit Name" : "BAXTER HEALTHCARE CORP", // column_35 -- BAXTER HEALTHCARE CORP
+  "PO Line Record ID": "1495150", // column_81 -- 1495150
+  "PO Line Record IDB": "1270", // column_82 -- 1270
+  "PO Line Number": "1", // column_83 -- 1
+  "Organization Item ID": "86804", // column_85 -- 86804
+  "Expense Code Account Number": "6375", // column_87 -- 6375
+  "Cost Center Account Number": "800", // column_88 -- 800
+  "Invoice IDB": "1270", // column_1 -- 1270
+  "Invoice Type" : "P", // column_4 -- P
+
   "Due Date" : "20141206000000", // column_7 -- 20141206000000
   "Voucher Number" : "2447316", // column_8 -- 2447316
   "Gross Invoice Amount" : "3766.4000", // column_9 -- 3766.4000
@@ -85,7 +109,7 @@ export const invoiceData: InvoiceDataType = {
   "Batch Number" : "0", // column_18 -- 0
   "PO Record ID" : "325616", // column_19 -- 325616
   "PO Record IDB" : "1270", // column_20 -- 1270
-  "PO Number" : "325630", // column_21 -- 325630
+
   "Note" : "&quot;&quot;", // column_22 -- &quot;&quot;
   "Code 1099" : "&quot;&quot;", // column_23 -- &quot;&quot;
   "Amount 1099" : "0.0000", // column_24 -- 0.0000
@@ -99,7 +123,7 @@ export const invoiceData: InvoiceDataType = {
   "Check Amount" : "0.0000", // column_32 -- 0.0000
   "Check Name" : "&quot;&quot;", // column_33 -- &quot;&quot;
   "Vendor Remit Code" : "BAX005", // column_34 -- BAX005
-  "Vendor Remit Name" : "BAXTER HEALTHCARE CORP", // column_35 -- BAXTER HEALTHCARE CORP
+
   "Vendor Term Code" : "NET 60", // column_36 -- NET 60
   "Single Check Indicator" : "N", // column_37 -- N
   "Fiscal Period" : "01262015", // column_38 -- 01262015
@@ -146,14 +170,11 @@ export const invoiceData: InvoiceDataType = {
   "Invoice Line Miscellaneous Amount": "0.0000", // column_78 -- 0.0000
   "Approved Price": "1858.2000", // column_79 -- 1858.2000
   "Approved Quantity": "2.0000", // column_80 -- 2.0000
-  "PO Line Record ID": "1495150", // column_81 -- 1495150
-  "PO Line Record IDB": "1270", // column_82 -- 1270
-  "PO Line Number": "1", // column_83 -- 1
+
   "PO Price": "1858.2000", // column_84 -- 1858.2000
-  "Organization Item ID": "86804", // column_85 -- 86804
+
   "Sub Account Number": "&quot;&quot;", // column_86 -- &quot;&quot;
-  "Expense Code Account Number": "6375", // column_87 -- 6375
-  "Cost Center Account Number": "800", // column_88 -- 800
+
   "Line Code 1099": "&quot;&quot;", // column_89 -- &quot;&quot;
   "Line Amount 1099": "&quot;&quot;", // column_90 -- &quot;&quot;
   "Line Notes": "&quot;&quot;", // column_91 -- &quot;&quot;

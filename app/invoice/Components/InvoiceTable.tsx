@@ -42,6 +42,12 @@ export default function InvoiceTable({
     "PO Line Record IDB",
     "Organization Item ID"
   ];
+  const autoMappingFields: { [key: string]: string; } = {
+    "Invoice ID": "Line Invoice ID",
+    "PO Line Record ID": "Invoice Line ID"
+  };
+  const autoMappingByInvoiceDate = ["Invoice ID", "Line Invoice ID", "PO Line Record ID", "Invoice Line ID"];
+
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
   const [duplicateOption, setDuplicateOption] = useState<"Normal" | number>(
@@ -87,6 +93,13 @@ export default function InvoiceTable({
 
   const handleValueChange = (key: string, value: string) => {
     onValueChange(key, value);
+    const kk = autoMappingFields[key];
+    if (kk) onValueChange(kk, value);
+    if (key == 'Invoice Date') {
+      autoMappingByInvoiceDate.forEach((keyMap) => {
+        onValueChange(keyMap, value);
+      });
+    }
   };
 
   const handleTextValueChange = (value: string) => {

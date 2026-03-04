@@ -207,32 +207,39 @@ export function formatAsInvoiceHL7(data: DataType, numberOfInvoiceLineNumbers: n
   // }
 
   const incrementWithPrefix = (prefix): string => {
-  let number = 1;
-  if (prefix) {
-    // Extract the number from the previous value
-    const match = prefix.match(/\d+$/);
-    if (match) {
-      const n = match[0];
-      const number = parseInt(n, 10) + 1;
-      const padLength = prefix.length - match.index;
-      return prefix.replaceAll(n, number.toString().padStart(padLength || 1, '0'));
+    let number = 1;
+    if (prefix) {
+      // Extract the number from the previous value
+      const match = prefix.match(/\d+$/);
+      if (match) {
+        const n = match[0];
+        const number = parseInt(n, 10) + 1;
+        const padLength = prefix.length - match.index;
+        return prefix.replaceAll(n, number.toString().padStart(padLength || 1, '0'));
+      }
     }
+    return `${prefix}${number}`;
   }
-  return `${prefix}${number}`;
-}
+
+  const firstInvoiceLineId = modifiedData["Invoice Line ID"];
 
   for (let i = 1; i <= numberOfInvoices; i++) {
-    modifiedData['Invoice ID'] = incrementWithPrefix(modifiedData['Invoice ID']);
-    modifiedData['Invoice Number'] = incrementWithPrefix(modifiedData['Invoice Number']);
-    modifiedData['PO Line Number'] = incrementWithPrefix(modifiedData['PO Line Number']);
+    if (i != 1) {
+      modifiedData['Invoice ID'] = incrementWithPrefix(modifiedData['Invoice ID']);
+      modifiedData['Invoice Number'] = incrementWithPrefix(modifiedData['Invoice Number']);
+      modifiedData['PO Line Number'] = incrementWithPrefix(modifiedData['PO Line Number']);
+    }
     const lines = [
       `MSH|^~\\\&|SupplyChain|001|||||MI|54c8150000000001|P|2.5`,
       `ZMI|${ZmiRender(modifiedData)}`,
       // `ZML|${ZmlRender(modifiedData)}`,
     ];
     for (let j = 1; j <= numberOfInvoiceLineNumbers; j++) {
+      if (j == 1) {
+        modifiedData["Invoice Line ID"] = firstInvoiceLineId;
+      }
       modifiedData["Invoice Line Number"] = j;
-      const invoiceLineId = (parseInt(modifiedData["Invoice Line ID"]) || 1) + 1;
+      const invoiceLineId = (parseInt(modifiedData["Invoice Line ID"]) || 0) + 1;
       modifiedData["Invoice Line ID"] = invoiceLineId;
       lines.push(`ZML|${ZmlRender(modifiedData)}`)
     }
