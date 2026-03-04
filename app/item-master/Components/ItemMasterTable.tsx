@@ -205,6 +205,7 @@ export default function ItemMasterTable({
             open={showModal}
             typeFile="IM"
             data={resultHL7Text}
+            numbers_created={duplicateOption === "Normal" ? 1 : duplicateOption}
           />
         )}
         {showViewDataModal && (

@@ -187,6 +187,7 @@ export default function PohTable({
             open={showModal}
             typeFile="POH"
             data={resultHL7Text}
+            numbers_created={duplicateOption === "Normal" ? 1 : duplicateOption}
           />
         )}
         {showViewDataModal && (

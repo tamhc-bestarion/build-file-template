@@ -194,6 +194,7 @@ export default function ContractTable({
             open={showModal}
             typeFile="contract"
             data={resultHL7Text}
+            numbers_created={duplicateOption === "Normal" ? 1 : duplicateOption}
           />
         )}
         {showViewDataModal && (

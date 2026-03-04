@@ -11,6 +11,7 @@ import {
 } from "@/lib/formatter";
 
 import { formatNumberShort } from "@/constants/FormatData"
+import { toast } from "@/components/ui/use-toast"
 
 interface InvoiceTableProps {
   data: DataType;
@@ -65,12 +66,43 @@ export default function InvoiceTable({
 
   const [showModal, setShowModal] = useState(false);
   const [showViewDataModal, setShowViewDataModal] = useState(false);
+  const [loadedFileContent, setLoadedFileContent] = useState<string | null>(null);
   const [numberOfInvoiceLineNumbers, setNumberOfInvoiceLineNumbers] = useState(1);
   const [numberOfInvoices, setNumberOfInvoices] = useState(1);
   const [numberOfItems, setNumberOfItems] = useState(1);
 
-  const openViewDataModal = () => setShowViewDataModal(true);
+  const openViewDataModal = () => {
+    setLoadedFileContent(null);
+    setShowViewDataModal(true);
+  };
   const closeViewDataModal = () => setShowViewDataModal(false);
+
+  const handleLoadFile = async () => {
+    try {
+      const res = await fetch("/api/build_file?fileTypeName=Invoice");
+      const json = await res.json();
+      const content = json?.data?.content;
+      if (content != null) {
+        setLoadedFileContent(content);
+        setShowViewDataModal(true);
+        toast({ title: "Đã tải file Invoice", description: "Nội dung file đã lưu được hiển thị.", duration: 2000 });
+      } else {
+        toast({
+          title: "Chưa có file",
+          description: "Chưa có file Invoice nào được lưu.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch {
+      toast({
+        title: "Lỗi tải file",
+        description: "Không thể tải nội dung file từ server.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
@@ -248,6 +280,13 @@ export default function InvoiceTable({
           Create file
         </button>
         <button
+          onClick={handleLoadFile}
+          className="text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-amber-600 dark:hover:bg-amber-700 dark:focus:ring-amber-800"
+          type="button"
+        >
+          Load file
+        </button>
+        <button
           onClick={openViewDataModal}
           className="text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
           type="button"
@@ -260,6 +299,7 @@ export default function InvoiceTable({
             open={showModal}
             typeFile="Invoice"
             data={resultHL7Text}
+            numbers_created={duplicateOption === "Normal" ? 1 : duplicateOption}
           />
         )}
         {showViewDataModal && (
@@ -267,6 +307,7 @@ export default function InvoiceTable({
             onClose={closeViewDataModal}
             open={showViewDataModal}
             data={data}
+            rawContent={loadedFileContent}
           />
         )}
       </div>
