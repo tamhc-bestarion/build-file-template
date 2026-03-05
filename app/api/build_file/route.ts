@@ -41,7 +41,8 @@ export async function POST(request: Request) {
     }
 
     const name = fileTypeName || 'Contract'
-    let fileType = await prisma.fileType.findUnique({ where: { name } })
+
+    let fileType = await prisma.fileType.findFirst({ where: { name } })
     if (!fileType) {
       fileType = await prisma.fileType.create({
         data: { name, status: true },

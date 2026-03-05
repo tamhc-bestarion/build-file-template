@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import type { DataType } from "@/lib/types";
+import type { DataType, InvoiceDataType } from "@/lib/types";
 import { useState } from "react";
 import ModalCreateFile from "@/components/modal-create-file";
 import ViewDataModal from "@/components/modal-view-data";
@@ -12,6 +12,7 @@ import {
 
 import { formatNumberShort } from "@/constants/FormatData"
 import { toast } from "@/components/ui/use-toast"
+import { parseInvoiceHL7 } from "@/lib/data";
 
 interface InvoiceTableProps {
   data: DataType;
@@ -50,6 +51,7 @@ export default function InvoiceTable({
   const autoMappingByInvoiceDate = ["Invoice ID", "Line Invoice ID", "PO Line Record ID", "Invoice Line ID"];
 
   const [editingCell, setEditingCell] = useState<string | null>(null);
+  const [invData, setInvData] = useState<InvoiceDataType | null>(data as InvoiceDataType);
 
   const [duplicateOption, setDuplicateOption] = useState<"Normal" | number>(
     "Normal"
@@ -82,6 +84,8 @@ export default function InvoiceTable({
       const res = await fetch("/api/build_file?fileTypeName=Invoice");
       const json = await res.json();
       const content = json?.data?.content;
+      const invData = parseInvoiceHL7(content);
+      setInvData(invData);
       if (content != null) {
         setLoadedFileContent(content);
         setShowViewDataModal(true);
@@ -225,7 +229,7 @@ export default function InvoiceTable({
             {/*{Array.from({ length: numberOfInvoices }).map((_, idx) => (
               <div>{idx}</div>
             ))}*/}
-            {Object.entries(data).map(([key, value], index) => (
+            {Object.entries(invData as Object).map(([key, value], index) => (
               <tr
                 key={key}
                 className={`${
