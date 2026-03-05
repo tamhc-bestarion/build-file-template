@@ -85,7 +85,10 @@ export default function InvoiceTable({
       const json = await res.json();
       const content = json?.data?.content;
       const invData = parseInvoiceHL7(content);
-      setInvData(invData);
+      Object.entries(invData as Object).map(([key, value], index) => (
+        onValueChange(key, value)
+      ));
+      // setInvData(invData);
       if (content != null) {
         setLoadedFileContent(content);
         setShowViewDataModal(true);
@@ -229,7 +232,7 @@ export default function InvoiceTable({
             {/*{Array.from({ length: numberOfInvoices }).map((_, idx) => (
               <div>{idx}</div>
             ))}*/}
-            {Object.entries(invData as Object).map(([key, value], index) => (
+            {Object.entries(data).map(([key, value], index) => (
               <tr
                 key={key}
                 className={`${
