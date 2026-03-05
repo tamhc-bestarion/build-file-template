@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const fileTypeName = searchParams.get('fileTypeName')
 
   if (fileTypeName) {
-    const fileType = await prisma.fileType.findUnique({ where: { name: fileTypeName } })
+    const fileType = await prisma.fileType.findFirst({ where: { name: fileTypeName } })
     if (!fileType) {
       return NextResponse.json({ data: null })
     }
