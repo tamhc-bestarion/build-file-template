@@ -51,7 +51,6 @@ export default function InvoiceTable({
   const autoMappingByInvoiceDate = ["Invoice ID", "Line Invoice ID", "PO Line Record ID", "Invoice Line ID"];
 
   const [editingCell, setEditingCell] = useState<string | null>(null);
-  const [invData, setInvData] = useState<InvoiceDataType | null>(data as InvoiceDataType);
 
   const [duplicateOption, setDuplicateOption] = useState<"Normal" | number>(
     "Normal"
@@ -85,8 +84,8 @@ export default function InvoiceTable({
       const json = await res.json();
       const content = json?.data?.content;
       const invData = parseInvoiceHL7(content);
-      Object.entries(invData as Object).map(([key, value], index) => (
-        onValueChange(key, value)
+      Object.entries(invData as Object).forEach(([key, value], index) => (
+        onValueChange(key, value as string)
       ));
       // setInvData(invData);
       if (content != null) {
@@ -141,10 +140,6 @@ export default function InvoiceTable({
     }
   };
 
-  const handleTextValueChange = (value: string) => {
-    handleNumberOfInvoice(value);
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent, key: string) => {
     if (e.key === "Enter") {
       setEditingCell(null);
@@ -172,13 +167,13 @@ export default function InvoiceTable({
     <>
       <div className="w-full">
         <form className="max-w-xs mb-[10px] flex items-center gap-4">
-          <div class="flex flex-row w-full min-w-full">
-            <div class="basis-1/4">
-              <div class="w-full max-w-sm relative mt-4 mr-2">
-                <label class="block mb-2 text-sm text-slate-600">Number of Invoice Line Numbers</label>
+          <div className="flex flex-row w-full min-w-full">
+            <div className="basis-1/4">
+              <div className="w-full max-w-sm relative mt-4 mr-2">
+                <label className="block mb-2 text-sm text-slate-600">Number of Invoice Line Numbers</label>
                 <input type="email"
                   onChange={(e) => handleNumberOfInvoiceLineNumbers(e.target.value)} onKeyDown={(e) => handleNumberOfInvoiceLineNumbers(e.target.value)} onBlur={handleBlur}
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
                 />
                 {/*<select
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -197,12 +192,12 @@ export default function InvoiceTable({
                 </select>*/}
               </div>
             </div>
-            <div class="basis-1/4">
-              <div class="w-full max-w-sm relative mt-4 ml-2 mr-2">
-                <label class="block mb-2 text-sm text-slate-600">Number of Invoices</label>
+            <div className="basis-1/4">
+              <div className="w-full max-w-sm relative mt-4 ml-2 mr-2">
+                <label className="block mb-2 text-sm text-slate-600">Number of Invoices</label>
                 <input type="email"
                   onChange={(e) => handleNumberOfInvoices(e.target.value)} onKeyDown={(e) => handleNumberOfInvoices(e.target.value)} onBlur={handleBlur}
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
                 />
               </div>
             </div>

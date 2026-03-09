@@ -206,7 +206,7 @@ export function formatAsInvoiceHL7(data: DataType, numberOfInvoiceLineNumbers: n
   //   blocks.push(lines.join('\r'));
   // }
 
-  const incrementWithPrefix = (prefix): string => {
+  const incrementWithPrefix = (prefix: string): string => {
     let number = 1;
     if (prefix) {
       // Extract the number from the previous value
@@ -214,7 +214,7 @@ export function formatAsInvoiceHL7(data: DataType, numberOfInvoiceLineNumbers: n
       if (match) {
         const n = match[0];
         const number = parseInt(n, 10) + 1;
-        const padLength = prefix.length - match.index;
+        const padLength = prefix.length - (match.index ?? 0);
         return prefix.replaceAll(n, number.toString().padStart(padLength || 1, '0'));
       }
     }

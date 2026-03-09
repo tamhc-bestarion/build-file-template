@@ -4,17 +4,37 @@ export function formatAsItemMaster(data: DataType, duplicateCount: number = 1, u
   const item = data as IMDataType;
   const highlightedFields: (keyof IMDataType)[] = [
     "Vendor Item ID",
+    "Item Desc",
     "Org Item ID", 
     "MFR Item ID"
   ];
 
   let blocks: string[] = [];
-  for (let i = 1; i <= duplicateCount; i++) {
+  const incrementWithPrefix = (prefix: string, index: number): string => {
+    let number = 1;
+    if (prefix) {
+      // Extract the number from the previous value
+      const match = prefix.match(/\d+$/);
+      if (match) {
+        const n = match[0];
+        const number = parseInt(n, 10) + index;
+        const padLength = prefix.length - (match.index ?? 0);
+        return prefix.replaceAll(n, number.toString().padStart(padLength || 1, '0'));
+      }
+    }
+    return `${prefix}${number}`;
+  }
+
+  for (let i = 1; i <= 10; i++) {
     const modifiedData = { ...item };
     highlightedFields.forEach((field) => {
-      modifiedData[field] =
-        item[field] + (i > 1 ? `-${i}` : "");
+      // modifiedData[field] =
+        // item[field] + (i > 1 ? `-${i}` : "");
+        modifiedData[field] = incrementWithPrefix(modifiedData[field], i);
+        console.log(field, modifiedData[field]);
     });
+
+    
 
     const baseLines = [
       `MSH|^~\\&amp;|SupplyChain|send facility|||541750311414||MFN^MAD|1549478123|P|2.2`,
