@@ -1,5 +1,48 @@
 import type { ContractDataType, PODataType, IMDataType, InvoiceDataType } from "./types"
 
+/**
+ * Parse Contract HL7 (MSH + CTR + ITM + VND + PKG segments) into ContractDataType.
+ * CTR: [1]=Contract Number, [2]=GPO ID, [3]=Status, [4]=Contract Start Date, [5]=Contract End Date, [13]=GPO Name, [19]=Supplier Type
+ * ITM: [1]=Org Item ID, [2]=Original Item Desc, [7]=MFR ID, [8]=MFR Name, [9]=MFR Item ID, [27]=Contract Item Start Date, [28]=Contract Item End Date
+ * VND: [2]=Vendor ID, [3]=Vendor Name, [4]=Vendor Item ID, [6]=Corp Number (^...)
+ * PKG: [2]=Contract UOM, [10]=Contract Price, [12]=Vendor Item ID (QOE implied)
+ */
+export function parseContractHL7(content: string): ContractDataType {
+  const lines = (content ?? "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const ctr = lines.find((l) => l.startsWith("CTR|"))?.split("|") ?? [];
+  const itm = lines.find((l) => l.startsWith("ITM|"))?.split("|") ?? [];
+  const vnd = lines.find((l) => l.startsWith("VND|"))?.split("|") ?? [];
+  const pkg = lines.find((l) => l.startsWith("PKG|"))?.split("|") ?? [];
+
+  const p = (arr: string[], idx: number) => arr[idx] ?? "";
+  const pc = (arr: string[], idx: number, part: number) => (arr[idx] ?? "").split("^")[part] ?? "";
+
+  return {
+    Action: "MAD",
+    "Contract Number": p(ctr, 1),
+    "GPO ID": p(ctr, 2),
+    Status: p(ctr, 3),
+    "Contract Start Date": p(ctr, 4),
+    "Contract End Date": p(ctr, 5),
+    "GPO Name": p(ctr, 13),
+    "Supplier Type": p(ctr, 19),
+    "Org Item ID": p(itm, 1),
+    "Original Item Desc": p(itm, 2),
+    "MFR ID": p(itm, 7),
+    "MFR Name": p(itm, 8),
+    "MFR Item ID": p(itm, 9),
+    "Contract Item Start Date": p(itm, 27),
+    "Contract Item End Date": p(itm, 28),
+    "Vendor ID": p(vnd, 2),
+    "Vendor Name": p(vnd, 3),
+    "Vendor Item ID": p(vnd, 4),
+    "Corp Number": pc(vnd, 6, 0),
+    "Contract UOM": p(pkg, 2),
+    "Contract QOE": "1",
+    "Contract Price": p(pkg, 10),
+  };
+}
+
 export const contractData: ContractDataType = {
   Action: "MAD",
   "Contract Number": "CNB10041025",
