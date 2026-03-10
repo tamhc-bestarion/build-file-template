@@ -25,16 +25,15 @@ export function formatAsItemMaster(data: DataType, duplicateCount: number = 1, u
     return `${prefix}${number}`;
   }
 
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= duplicateCount; i++) {
     const modifiedData = { ...item };
-    highlightedFields.forEach((field) => {
-      // modifiedData[field] =
-        // item[field] + (i > 1 ? `-${i}` : "");
-        modifiedData[field] = incrementWithPrefix(modifiedData[field], i);
-        console.log(field, modifiedData[field]);
-    });
-
-    
+    if (i > 1) {
+      highlightedFields.forEach((field) => {
+        // modifiedData[field] =
+          // item[field] + (i > 1 ? `-${i}` : "");
+          modifiedData[field] = incrementWithPrefix(modifiedData[field], i);
+      });
+    }
 
     const baseLines = [
       `MSH|^~\\&amp;|SupplyChain|send facility|||541750311414||MFN^MAD|1549478123|P|2.2`,

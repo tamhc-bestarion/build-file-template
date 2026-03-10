@@ -45,14 +45,14 @@ export const poData: PODataType = {
 }
 
 export const itemMasterData: IMDataType = {
+  "Org Item ID": "ITEM20260310",
+  "Vendor Item ID": "20260310",
+  "MFR Item ID": "20260310",
+  "Item Desc": "Item 20260310",
   "Vendor ID": "91",
   "Vendor Name": "ACCUTOME INC",
-  "Vendor Item ID": "250424015A",
-  "Org Item ID": "ITM250424015",
-  "Item Desc": "Item 250424015",
   "MFR ID": "1319",
   "MFR Name": "WILLIS PRINTING",
-  "MFR Item ID": "250424015B",
   "UOM": "EA",
   "QOE": "1",
   "Price": "50",
@@ -61,6 +61,46 @@ export const itemMasterData: IMDataType = {
   "Expense Code Number": "70290",
   "Expense Code Name": "CONTRACT PERSONNEL",
   "Location ID": "2087"
+}
+
+/**
+ * Parse HL7 Item Master (MSH + ZIT + ZIN + optional ZIA) into IMDataType.
+ * ZIT: [1]=Vendor ID^Vendor Item ID^Price^UOM, [2]=QOE, [5]=Item Desc, [14]=MFR ID, [15]=MFR Item ID, [29]=Org Item ID, [36]=Vendor Name, [45]=MFR Name, [47]=Corp Number, [48]=UOM
+ * ZIN: [1]=Location ID^..., ZIA: [1]=Org Item ID, [2]=Corp Number^Corp Name, [4]=Expense Code Number^Expense Code Name
+ */
+export function parseItemMasterHL7(hl7: string): IMDataType {
+  const zitRaw = hl7.match(/ZIT\|[^\r\n]*/)?.[0] ?? ""
+  const zinRaw = hl7.match(/ZIN\|[^\r\n]*/)?.[0] ?? ""
+  const ziaRaw = hl7.match(/ZIA\|[^\r\n]*/)?.[0] ?? ""
+
+  const zit = zitRaw.split("|")
+  const zin = zinRaw.split("|")
+  const zia = ziaRaw.split("|")
+
+  const p = (arr: string[], idx: number) => arr[idx] ?? ""
+  const pc = (arr: string[], idx: number, part: number) => (arr[idx] ?? "").split("^")[part] ?? ""
+
+  const zit1 = zit[1] ?? ""
+  const zit1Parts = zit1.split("^")
+
+  return {
+    "Vendor ID": zit1Parts[0] ?? "",
+    "Vendor Item ID": zit1Parts[1] ?? "",
+    "Price": zit1Parts[2] ?? "",
+    "UOM": p(zit, 48) || (zit1Parts[3] ?? ""),
+    "QOE": p(zit, 2),
+    "Item Desc": p(zit, 5),
+    "MFR ID": p(zit, 13),
+    "MFR Name": p(zit, 45),
+    "MFR Item ID": p(zit, 14),
+    "Org Item ID": p(zit, 29) || p(zia, 1),
+    "Vendor Name": p(zit, 36) || (zin.length > 29 ? zin[29] : ""),
+    "Corp Number": p(zit, 47),
+    "Corp Name": pc(zia, 2, 1),
+    "Expense Code Number": pc(zia, 4, 0),
+    "Expense Code Name": pc(zia, 4, 1),
+    "Location ID": (zin[1] ?? "").split("^")[0] ?? "",
+  }
 }
 
 /**
