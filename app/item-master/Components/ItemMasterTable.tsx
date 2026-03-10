@@ -10,7 +10,6 @@ import {
   formatAsItemMaster
 } from "@/lib/formatter";
 
-import { formatNumberShort } from "@/constants/FormatData"
 
 interface ItemMasterTableProps {
   data: DataType;
@@ -34,19 +33,14 @@ export default function ItemMasterTable({
   ];
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
-  const [duplicateOption, setDuplicateOption] = useState<"Normal" | number>(
-    "Normal"
-  );
+  const [numberOfItems, setNumberOfItems] = useState<number>(1);
 
   const [usePeopleSoft, setUsePeopleSoft] = useState(false);
 
-  const handleDuplicateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    if (val === "Normal") setDuplicateOption("Normal");
-    else
-      setDuplicateOption(
-        Number(val.replace("Create-", "").replace("k", "000"))
-      );
+  const handleNumberOfItemsChange = (value: string) => {
+    const num = parseInt(value);
+    if (!isNaN(num) && num > 0) setNumberOfItems(num);
+    else if (value === "") setNumberOfItems(1);
   };
 
   const handlePeopleSoftChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,10 +75,9 @@ export default function ItemMasterTable({
   };
 
   const getFormattedData = () => {
-    const duplicateCount = duplicateOption === "Normal" ? 1 : duplicateOption;
     switch (activeFileType) {
       case "HL7":
-        return formatAsItemMaster(data, duplicateCount, usePeopleSoft);
+        return formatAsItemMaster(data, numberOfItems, usePeopleSoft);
       default:
         return formatAsPipeDelimited(data);
     }
@@ -96,24 +89,19 @@ export default function ItemMasterTable({
   return (
     <>
       <div className="w-full">
-        <form className="max-w-xs mb-[10px] flex items-center gap-4">
-          <select
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            value={
-              duplicateOption === "Normal"
-                ? "Normal"
-                : `Create-${formatNumberShort(duplicateOption)}`
-            }
-            onChange={handleDuplicateChange}
-          >
-            <option value="Normal">Normal</option>
-            <option value="Create-10k">Create 10k item</option>
-            <option value="Create-50k">Create 50k item</option>
-            <option value="Create-100k">Create 100k item</option>
-            <option value="Create-200k">Create 200k item</option>
-          </select>
-          
-          <div className="flex items-center">
+        <form className="mb-[10px] flex items-end gap-4">
+          <div className="w-full max-w-sm relative mt-4">
+            <label className="block mb-2 text-sm text-slate-600">Number of Items to Create</label>
+            <input
+              type="text"
+              onChange={(e) => handleNumberOfItemsChange(e.target.value)}
+              onBlur={handleBlur}
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              placeholder="1"
+            />
+          </div>
+
+          <div className="flex items-center pb-2.5">
             <input
               id="usePeopleSoft"
               type="checkbox"
@@ -205,7 +193,7 @@ export default function ItemMasterTable({
             open={showModal}
             typeFile="IM"
             data={resultHL7Text}
-            numbers_created={duplicateOption === "Normal" ? 1 : duplicateOption}
+            numbers_created={numberOfItems}
           />
         )}
         {showViewDataModal && (
