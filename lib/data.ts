@@ -26,22 +26,58 @@ export const contractData: ContractDataType = {
 }
 
 export const poData: PODataType = {
-  "PO Number": "2025010444",
-  "PO Date": "20250401",
+  "PO Number": "20260310",
   "PO Line Number": "1",
+  "Item Vendor Item ID": "VCN20260310",
+  "Item MFR Item ID": "MCN20260310",
+  "PO Date": "20260310",
+  "Org Item ID": "POH20260310",
+  "Original Item Desc": "POH 20260310",
   "PO Qty": "9",
   "PO UOM": "EA",
   "PO Price": "99.9",
   "Vendor number": "V03775",
   "Item Vendor Name": "CARDINAL HEALTH TEST",
-  "Item Vendor Item ID": "VCN202503242",
   "MFR ID": "1757",
   "Item MFR Name": "JOHNSON AND JOHNSON HOSPITAL SERV.",
-  "Item MFR Item ID": "MCN202503242",
-  "Org Item ID": "X2345",
   GL: "299-95001731-8303200",
-  "Original Item Desc": "New item 2",
   "Received Qty": "9",
+}
+
+/**
+ * Parse POH EDI (BEG, DTM, PO1, PID, QTY segments, ^ and ~ delimiters) into PODataType.
+ * BEG^04^SA^PO Number^^PO Date, DTM^097^PO Date, PO1^..., PID^F^^^^^Original Item Desc, QTY^87^Received Qty
+ * PO1: [1]=PO Line Number, [2]=PO Qty, [3]=PO UOM, [4]=PO Price, [7]=Item Vendor Name~Vendor number~Item MFR Name~MFR ID, [9]=Item MFR Item ID, [11]=Item Vendor Item ID, [15]=Org Item ID, [17]=GL
+ */
+export function parsePOHHL7(content: string): PODataType {
+  const lines = (content ?? "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const beg = lines.find((l) => l.startsWith("BEG^"))?.split("^") ?? [];
+  const dtm = lines.find((l) => l.startsWith("DTM^"))?.split("^") ?? [];
+  const po1 = lines.find((l) => l.startsWith("PO1^"))?.split("^") ?? [];
+  const pid = lines.find((l) => l.startsWith("PID^"))?.split("^") ?? [];
+  const qty = lines.find((l) => l.startsWith("QTY^"))?.split("^") ?? [];
+
+  const p = (arr: string[], idx: number) => arr[idx] ?? "";
+  const mfParts = (p(po1, 7) ?? "").split("~");
+
+  return {
+    "PO Number": p(beg, 3),
+    "PO Date": p(dtm, 2) || p(beg, 5),
+    "PO Line Number": p(po1, 1),
+    "PO Qty": p(po1, 2),
+    "PO UOM": p(po1, 3),
+    "PO Price": p(po1, 4),
+    "Vendor number": mfParts[1] ?? "",
+    "Item Vendor Name": mfParts[0] ?? "",
+    "Item Vendor Item ID": p(po1, 11),
+    "MFR ID": mfParts[3] ?? "",
+    "Item MFR Name": mfParts[2] ?? "",
+    "Item MFR Item ID": p(po1, 9),
+    "Org Item ID": p(po1, 15),
+    GL: p(po1, 17),
+    "Original Item Desc": p(pid, 6),
+    "Received Qty": p(qty, 2),
+  };
 }
 
 export const itemMasterData: IMDataType = {

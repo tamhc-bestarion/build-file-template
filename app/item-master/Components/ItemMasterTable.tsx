@@ -102,18 +102,21 @@ export default function ItemMasterTable({
     onValueChange(key, value);
     switch (key) {
       case "Vendor Item ID":
-        onValueChange("MFR Item ID", value);
-        onValueChange("Org Item ID", `ITEM${value}`);
-        onValueChange("Item Desc", `Item ${value}`);
+        const venCatNumber = value.toString().replace(/^VCN/, '');
+        onValueChange("MFR Item ID", `MCN${venCatNumber}`);
+        onValueChange("Org Item ID", `ITEM${venCatNumber}`);
+        onValueChange("Item Desc", `Item ${venCatNumber}`);
         break;
       case "MFR Item ID":
-        onValueChange("Vendor Item ID", value);
-        onValueChange("Org Item ID", `ITEM${value}`);
-        onValueChange("Item Desc", `Item ${value}`);
+        const mfrCatNumber = value.toString().replace(/^MCN/, '');
+        onValueChange("Vendor Item ID", `VCN${mfrCatNumber}`);
+        onValueChange("Org Item ID", `ITEM${mfrCatNumber}`);
+        onValueChange("Item Desc", `Item ${mfrCatNumber}`);
         break;
       case "Org Item ID":
-        onValueChange("Vendor Item ID", value);
-        onValueChange("MFR Item ID", value);
+        const orgCatNumber = value.toString().replace(/^ITEM/, '');
+        onValueChange("Vendor Item ID", `VCN${orgCatNumber}`);
+        onValueChange("MFR Item ID", `MCN${orgCatNumber}`);
         onValueChange("Item Desc", `Item ${value}`);
         break;
     
