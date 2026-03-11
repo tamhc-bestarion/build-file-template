@@ -46,7 +46,7 @@ export function formatAsItemMaster(data: DataType, duplicateCount: number = 1, u
       baseLines.push(`ZIA|${modifiedData["Org Item ID"]}|${modifiedData["Corp Number"]}^${modifiedData["Corp Name"]}||${modifiedData["Expense Code Number"]}^${modifiedData["Expense Code Name"]}|||`);
     }
 
-    blocks.push(baseLines.join("\r\n"));
+    blocks.push(baseLines.join('\r'));
   }
-  return blocks.join("\r\n").split("\r\n");
+  return blocks.join('\r').split('\r');
 } 

@@ -22,13 +22,13 @@ export function formatAsPipeDelimited(data: DataType, duplicateCount: number = 5
         `MFI|CTR||UPD|||NE`,
         `MFE|MAD|000000014||2802_110|EI|20140502064957924||`,
         `CTR|${modifiedData["Contract Number"]}|${modifiedData["GPO ID"]}|${modifiedData["Status"]}|${modifiedData["Contract Start Date"]}|${modifiedData["Contract End Date"]}||751|L||||${modifiedData["GPO ID"]}|${modifiedData["GPO Name"]}|||||||${modifiedData["Supplier Type"]}|||1||`,
-        `ITM|${modifiedData["Org Item ID"]}|${modifiedData["Original Item Desc"]}|A||||${modifiedData["MFR ID"]}|${modifiedData["MFR Name"]}|${modifiedData["MFR Item ID"]}||||||||||||||||||||||||||${modifiedData["Contract Item Start Date"]}|${modifiedData["Contract Item End Date"]}||`,
-        `VND|1|${modifiedData["Vendor ID"]}|${modifiedData["Vendor Name"]}|${modifiedData["Vendor Item ID"]}||${modifiedData["Corp Number"]}^47507^||||||||${modifiedData["Contract Item Start Date"]}|${modifiedData["Contract Item End Date"]}||`,
-        `PKG|1|${modifiedData["Contract UOM"]}||||||||${modifiedData["Contract Price"]}|1|${modifiedData["Vendor Item ID"]}`,
+        `ITM|${modifiedData["Org Item ID"]}|${modifiedData["Original Item Desc"]}|A||||${modifiedData["MFR ID"]}|${modifiedData["MFR Name"]}|${modifiedData["MFR Item ID"]}|||||||||||||||||||||||||${modifiedData["Contract Item Start Date"]}|${modifiedData["Contract Item End Date"]}||`,
+        `VND|1|${modifiedData["Vendor ID"]}|${modifiedData["Vendor Name"]}|${modifiedData["Vendor Item ID"]}||${modifiedData["Corp Number"]}^47507^|||||||${modifiedData["Contract Item Start Date"]}|${modifiedData["Contract Item End Date"]}||`,
+        `PKG|1|${modifiedData["Contract UOM"]}|||||||${modifiedData["Contract Price"]}|1|${modifiedData["Vendor Item ID"]}`,
       ];
-      blocks.push(lines.join("\r\n"));
+      blocks.push(lines.join('\r'));
     }
-    return blocks.join("\r\n").split("\r\n");
+    return blocks.join('\r').split('\r');
   // }
   // else if ("PO Number" in data) {
   //   const poData = data as PODataType;
