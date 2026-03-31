@@ -6,6 +6,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4100:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
   nginx-build-file:
     image: nginx:alpine
     ports:
