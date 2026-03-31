@@ -23,6 +23,7 @@ model FileType {
 
 model FileBuild {
   id              Int      @id @default(autoincrement())
+  content         String
   numbers_created Int
   fileTypeId      Int
   fileType        FileType @relation(fields: [fileTypeId], references: [id])

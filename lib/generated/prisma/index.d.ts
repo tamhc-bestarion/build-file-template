@@ -40,7 +40,7 @@ export type FileBuild = $Result.DefaultSelection<Prisma.$FileBuildPayload>
  */
 export class PrismaClient<
   ClientOptions extends Prisma.PrismaClientOptions = Prisma.PrismaClientOptions,
-  U = 'log' extends keyof ClientOptions ? ClientOptions['log'] extends Array<Prisma.LogLevel | Prisma.LogDefinition> ? Prisma.GetEvents<ClientOptions['log']> : never : never,
+  const U = 'log' extends keyof ClientOptions ? ClientOptions['log'] extends Array<Prisma.LogLevel | Prisma.LogDefinition> ? Prisma.GetEvents<ClientOptions['log']> : never : never,
   ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs
 > {
   [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['other'] }
@@ -72,13 +72,6 @@ export class PrismaClient<
    * Disconnect from the database
    */
   $disconnect(): $Utils.JsPromise<void>;
-
-  /**
-   * Add a middleware
-   * @deprecated since 4.16.0. For new code, prefer client extensions instead.
-   * @see https://pris.ly/d/extensions
-   */
-  $use(cb: Prisma.Middleware): void
 
 /**
    * Executes a prepared raw query and returns the number of affected rows.
@@ -226,8 +219,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 6.8.2
-   * Query Engine version: 2060c79ba17c6bb9f5823312b6f6b7f4a845738e
+   * Prisma Client JS version: 6.19.2
+   * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
    */
   export type PrismaVersion = {
     client: string
@@ -240,6 +233,7 @@ export namespace Prisma {
    */
 
 
+  export import Bytes = runtime.Bytes
   export import JsonObject = runtime.JsonObject
   export import JsonArray = runtime.JsonArray
   export import JsonValue = runtime.JsonValue
@@ -823,16 +817,24 @@ export namespace Prisma {
     /**
      * @example
      * ```
-     * // Defaults to stdout
+     * // Shorthand for `emit: 'stdout'`
      * log: ['query', 'info', 'warn', 'error']
      * 
-     * // Emit as events
+     * // Emit as events only
      * log: [
-     *   { emit: 'stdout', level: 'query' },
-     *   { emit: 'stdout', level: 'info' },
-     *   { emit: 'stdout', level: 'warn' }
-     *   { emit: 'stdout', level: 'error' }
+     *   { emit: 'event', level: 'query' },
+     *   { emit: 'event', level: 'info' },
+     *   { emit: 'event', level: 'warn' }
+     *   { emit: 'event', level: 'error' }
      * ]
+     * 
+     * / Emit as events and log to stdout
+     * og: [
+     *  { emit: 'stdout', level: 'query' },
+     *  { emit: 'stdout', level: 'info' },
+     *  { emit: 'stdout', level: 'warn' }
+     *  { emit: 'stdout', level: 'error' }
+     * 
      * ```
      * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/logging#the-log-option).
      */
@@ -847,6 +849,10 @@ export namespace Prisma {
       timeout?: number
       isolationLevel?: Prisma.TransactionIsolationLevel
     }
+    /**
+     * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-planetscale`
+     */
+    adapter?: runtime.SqlDriverAdapterFactory | null
     /**
      * Global configuration for omitting model fields by default.
      * 
@@ -875,10 +881,15 @@ export namespace Prisma {
     emit: 'stdout' | 'event'
   }
 
-  export type GetLogType<T extends LogLevel | LogDefinition> = T extends LogDefinition ? T['emit'] extends 'event' ? T['level'] : never : never
-  export type GetEvents<T extends any> = T extends Array<LogLevel | LogDefinition> ?
-    GetLogType<T[0]> | GetLogType<T[1]> | GetLogType<T[2]> | GetLogType<T[3]>
-    : never
+  export type CheckIsLogLevel<T> = T extends LogLevel ? T : never;
+
+  export type GetLogType<T> = CheckIsLogLevel<
+    T extends LogDefinition ? T['level'] : T
+  >;
+
+  export type GetEvents<T extends any[]> = T extends Array<LogLevel | LogDefinition>
+    ? GetLogType<T[number]>
+    : never;
 
   export type QueryEvent = {
     timestamp: Date
@@ -918,25 +929,6 @@ export namespace Prisma {
     | 'runCommandRaw'
     | 'findRaw'
     | 'groupBy'
-
-  /**
-   * These options are being passed into the middleware as "params"
-   */
-  export type MiddlewareParams = {
-    model?: ModelName
-    action: PrismaAction
-    args: any
-    dataPath: string[]
-    runInTransaction: boolean
-  }
-
-  /**
-   * The `T` type makes sure, that the `return proceed` is not forgotten in the middleware implementation
-   */
-  export type Middleware<T = any> = (
-    params: MiddlewareParams,
-    next: (params: MiddlewareParams) => $Utils.JsPromise<T>,
-  ) => $Utils.JsPromise<T>
 
   // tested in getLogLevel.test.ts
   export function getLogLevel(log: Array<LogLevel | LogDefinition>): LogLevel | undefined;
@@ -2094,18 +2086,21 @@ export namespace Prisma {
 
   export type FileBuildMinAggregateOutputType = {
     id: number | null
+    content: string | null
     numbers_created: number | null
     fileTypeId: number | null
   }
 
   export type FileBuildMaxAggregateOutputType = {
     id: number | null
+    content: string | null
     numbers_created: number | null
     fileTypeId: number | null
   }
 
   export type FileBuildCountAggregateOutputType = {
     id: number
+    content: number
     numbers_created: number
     fileTypeId: number
     _all: number
@@ -2126,18 +2121,21 @@ export namespace Prisma {
 
   export type FileBuildMinAggregateInputType = {
     id?: true
+    content?: true
     numbers_created?: true
     fileTypeId?: true
   }
 
   export type FileBuildMaxAggregateInputType = {
     id?: true
+    content?: true
     numbers_created?: true
     fileTypeId?: true
   }
 
   export type FileBuildCountAggregateInputType = {
     id?: true
+    content?: true
     numbers_created?: true
     fileTypeId?: true
     _all?: true
@@ -2231,6 +2229,7 @@ export namespace Prisma {
 
   export type FileBuildGroupByOutputType = {
     id: number
+    content: string
     numbers_created: number
     fileTypeId: number
     _count: FileBuildCountAggregateOutputType | null
@@ -2256,6 +2255,7 @@ export namespace Prisma {
 
   export type FileBuildSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    content?: boolean
     numbers_created?: boolean
     fileTypeId?: boolean
     fileType?: boolean | FileTypeDefaultArgs<ExtArgs>
@@ -2263,6 +2263,7 @@ export namespace Prisma {
 
   export type FileBuildSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    content?: boolean
     numbers_created?: boolean
     fileTypeId?: boolean
     fileType?: boolean | FileTypeDefaultArgs<ExtArgs>
@@ -2270,6 +2271,7 @@ export namespace Prisma {
 
   export type FileBuildSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    content?: boolean
     numbers_created?: boolean
     fileTypeId?: boolean
     fileType?: boolean | FileTypeDefaultArgs<ExtArgs>
@@ -2277,11 +2279,12 @@ export namespace Prisma {
 
   export type FileBuildSelectScalar = {
     id?: boolean
+    content?: boolean
     numbers_created?: boolean
     fileTypeId?: boolean
   }
 
-  export type FileBuildOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "numbers_created" | "fileTypeId", ExtArgs["result"]["fileBuild"]>
+  export type FileBuildOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "numbers_created" | "fileTypeId", ExtArgs["result"]["fileBuild"]>
   export type FileBuildInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     fileType?: boolean | FileTypeDefaultArgs<ExtArgs>
   }
@@ -2299,6 +2302,7 @@ export namespace Prisma {
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
+      content: string
       numbers_created: number
       fileTypeId: number
     }, ExtArgs["result"]["fileBuild"]>
@@ -2726,6 +2730,7 @@ export namespace Prisma {
    */
   interface FileBuildFieldRefs {
     readonly id: FieldRef<"FileBuild", 'Int'>
+    readonly content: FieldRef<"FileBuild", 'String'>
     readonly numbers_created: FieldRef<"FileBuild", 'Int'>
     readonly fileTypeId: FieldRef<"FileBuild", 'Int'>
   }
@@ -3167,6 +3172,7 @@ export namespace Prisma {
 
   export const FileBuildScalarFieldEnum: {
     id: 'id',
+    content: 'content',
     numbers_created: 'numbers_created',
     fileTypeId: 'fileTypeId'
   };
@@ -3299,6 +3305,7 @@ export namespace Prisma {
     OR?: FileBuildWhereInput[]
     NOT?: FileBuildWhereInput | FileBuildWhereInput[]
     id?: IntFilter<"FileBuild"> | number
+    content?: StringFilter<"FileBuild"> | string
     numbers_created?: IntFilter<"FileBuild"> | number
     fileTypeId?: IntFilter<"FileBuild"> | number
     fileType?: XOR<FileTypeScalarRelationFilter, FileTypeWhereInput>
@@ -3306,6 +3313,7 @@ export namespace Prisma {
 
   export type FileBuildOrderByWithRelationInput = {
     id?: SortOrder
+    content?: SortOrder
     numbers_created?: SortOrder
     fileTypeId?: SortOrder
     fileType?: FileTypeOrderByWithRelationInput
@@ -3316,6 +3324,7 @@ export namespace Prisma {
     AND?: FileBuildWhereInput | FileBuildWhereInput[]
     OR?: FileBuildWhereInput[]
     NOT?: FileBuildWhereInput | FileBuildWhereInput[]
+    content?: StringFilter<"FileBuild"> | string
     numbers_created?: IntFilter<"FileBuild"> | number
     fileTypeId?: IntFilter<"FileBuild"> | number
     fileType?: XOR<FileTypeScalarRelationFilter, FileTypeWhereInput>
@@ -3323,6 +3332,7 @@ export namespace Prisma {
 
   export type FileBuildOrderByWithAggregationInput = {
     id?: SortOrder
+    content?: SortOrder
     numbers_created?: SortOrder
     fileTypeId?: SortOrder
     _count?: FileBuildCountOrderByAggregateInput
@@ -3337,6 +3347,7 @@ export namespace Prisma {
     OR?: FileBuildScalarWhereWithAggregatesInput[]
     NOT?: FileBuildScalarWhereWithAggregatesInput | FileBuildScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"FileBuild"> | number
+    content?: StringWithAggregatesFilter<"FileBuild"> | string
     numbers_created?: IntWithAggregatesFilter<"FileBuild"> | number
     fileTypeId?: IntWithAggregatesFilter<"FileBuild"> | number
   }
@@ -3385,39 +3396,46 @@ export namespace Prisma {
   }
 
   export type FileBuildCreateInput = {
+    content: string
     numbers_created: number
     fileType: FileTypeCreateNestedOneWithoutBuildsInput
   }
 
   export type FileBuildUncheckedCreateInput = {
     id?: number
+    content: string
     numbers_created: number
     fileTypeId: number
   }
 
   export type FileBuildUpdateInput = {
+    content?: StringFieldUpdateOperationsInput | string
     numbers_created?: IntFieldUpdateOperationsInput | number
     fileType?: FileTypeUpdateOneRequiredWithoutBuildsNestedInput
   }
 
   export type FileBuildUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
     numbers_created?: IntFieldUpdateOperationsInput | number
     fileTypeId?: IntFieldUpdateOperationsInput | number
   }
 
   export type FileBuildCreateManyInput = {
     id?: number
+    content: string
     numbers_created: number
     fileTypeId: number
   }
 
   export type FileBuildUpdateManyMutationInput = {
+    content?: StringFieldUpdateOperationsInput | string
     numbers_created?: IntFieldUpdateOperationsInput | number
   }
 
   export type FileBuildUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
     numbers_created?: IntFieldUpdateOperationsInput | number
     fileTypeId?: IntFieldUpdateOperationsInput | number
   }
@@ -3538,6 +3556,7 @@ export namespace Prisma {
 
   export type FileBuildCountOrderByAggregateInput = {
     id?: SortOrder
+    content?: SortOrder
     numbers_created?: SortOrder
     fileTypeId?: SortOrder
   }
@@ -3550,12 +3569,14 @@ export namespace Prisma {
 
   export type FileBuildMaxOrderByAggregateInput = {
     id?: SortOrder
+    content?: SortOrder
     numbers_created?: SortOrder
     fileTypeId?: SortOrder
   }
 
   export type FileBuildMinOrderByAggregateInput = {
     id?: SortOrder
+    content?: SortOrder
     numbers_created?: SortOrder
     fileTypeId?: SortOrder
   }
@@ -3721,11 +3742,13 @@ export namespace Prisma {
   }
 
   export type FileBuildCreateWithoutFileTypeInput = {
+    content: string
     numbers_created: number
   }
 
   export type FileBuildUncheckedCreateWithoutFileTypeInput = {
     id?: number
+    content: string
     numbers_created: number
   }
 
@@ -3760,6 +3783,7 @@ export namespace Prisma {
     OR?: FileBuildScalarWhereInput[]
     NOT?: FileBuildScalarWhereInput | FileBuildScalarWhereInput[]
     id?: IntFilter<"FileBuild"> | number
+    content?: StringFilter<"FileBuild"> | string
     numbers_created?: IntFilter<"FileBuild"> | number
     fileTypeId?: IntFilter<"FileBuild"> | number
   }
@@ -3804,20 +3828,24 @@ export namespace Prisma {
 
   export type FileBuildCreateManyFileTypeInput = {
     id?: number
+    content: string
     numbers_created: number
   }
 
   export type FileBuildUpdateWithoutFileTypeInput = {
+    content?: StringFieldUpdateOperationsInput | string
     numbers_created?: IntFieldUpdateOperationsInput | number
   }
 
   export type FileBuildUncheckedUpdateWithoutFileTypeInput = {
     id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
     numbers_created?: IntFieldUpdateOperationsInput | number
   }
 
   export type FileBuildUncheckedUpdateManyWithoutFileTypeInput = {
     id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
     numbers_created?: IntFieldUpdateOperationsInput | number
   }
 

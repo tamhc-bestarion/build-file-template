@@ -6,21 +6,39 @@ export function formatAsPOHHL7(data: DataType, duplicateCount: number = 1): stri
     "PO Number",
     "PO Line Number",
     "Item Vendor Item ID",
-    "Item MFR Item ID"
+    "Item MFR Item ID",
+    "PO Date",
+    "Org Item ID",
+    "Original Item Desc"
   ];
+
+  const incrementWithPrefix = (prefix: string, index: number): string => {
+    let number = 1;
+    if (prefix) {
+      // Extract the number from the previous value
+      const match = prefix.match(/\d+$/);
+      if (match) {
+        const n = match[0];
+        const number = parseInt(n, 10) + index;
+        const padLength = prefix.length - (match.index ?? 0);
+        return prefix.replaceAll(n, number.toString().padStart(padLength || 1, '0'));
+      }
+    }
+    return `${prefix}${number}`;
+  }
 
   let blocks: string[] = [];
   for (let i = 1; i <= duplicateCount; i++) {
     const modifiedData = { ...poData };
+    if (i > 1) {
     highlightedFields.forEach((field) => {
-      if (field === "PO Line Number") {
-        const baseNumber = parseInt(poData[field]) || 1;
-        modifiedData[field] = (baseNumber + i - 1).toString();
-      } else {
-        modifiedData[field] =
-          poData[field] + (i > 1 ? `-${i-1}` : "");
-      }
-    });
+        if (field === "PO Line Number") {
+          modifiedData[field] = i.toString();
+        } else {
+          modifiedData[field] = incrementWithPrefix(modifiedData[field], i);
+        }
+      });
+    }
 
     const lines = [
       `ISA^00^          ^00^          ^01^sending system ^01^receiving syste^141117^1137^U^04010^000000002^0^P^^`,

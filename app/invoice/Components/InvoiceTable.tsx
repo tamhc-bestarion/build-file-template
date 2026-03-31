@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import type { DataType } from "@/lib/types";
+import type { DataType, InvoiceDataType } from "@/lib/types";
 import { useState } from "react";
 import ModalCreateFile from "@/components/modal-create-file";
 import ViewDataModal from "@/components/modal-view-data";
@@ -11,6 +11,8 @@ import {
 } from "@/lib/formatter";
 
 import { formatNumberShort } from "@/constants/FormatData"
+import { toast } from "@/components/ui/use-toast"
+import { parseInvoiceHL7 } from "@/lib/data";
 
 interface InvoiceTableProps {
   data: DataType;
@@ -42,6 +44,12 @@ export default function InvoiceTable({
     "PO Line Record IDB",
     "Organization Item ID"
   ];
+  const autoMappingFields: { [key: string]: string; } = {
+    "Invoice ID": "Line Invoice ID",
+    "PO Line Record ID": "Invoice Line ID"
+  };
+  const autoMappingByInvoiceDate = ["Invoice ID", "Line Invoice ID", "PO Line Record ID", "Invoice Line ID"];
+
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
   const [duplicateOption, setDuplicateOption] = useState<"Normal" | number>(
@@ -59,12 +67,48 @@ export default function InvoiceTable({
 
   const [showModal, setShowModal] = useState(false);
   const [showViewDataModal, setShowViewDataModal] = useState(false);
+  const [loadedFileContent, setLoadedFileContent] = useState<string | null>(null);
   const [numberOfInvoiceLineNumbers, setNumberOfInvoiceLineNumbers] = useState(1);
   const [numberOfInvoices, setNumberOfInvoices] = useState(1);
   const [numberOfItems, setNumberOfItems] = useState(1);
 
-  const openViewDataModal = () => setShowViewDataModal(true);
+  const openViewDataModal = () => {
+    setLoadedFileContent(null);
+    setShowViewDataModal(true);
+  };
   const closeViewDataModal = () => setShowViewDataModal(false);
+
+  const handleLoadFile = async () => {
+    try {
+      const res = await fetch("/api/build_file?fileTypeName=Invoice");
+      const json = await res.json();
+      const content = json?.data?.content;
+      const invData = parseInvoiceHL7(content);
+      Object.entries(invData as Object).forEach(([key, value], index) => (
+        onValueChange(key, value as string)
+      ));
+      // setInvData(invData);
+      if (content != null) {
+        setLoadedFileContent(content);
+        setShowViewDataModal(true);
+        toast({ title: "Đã tải file Invoice", description: "Nội dung file đã lưu được hiển thị.", duration: 2000 });
+      } else {
+        toast({
+          title: "Chưa có file",
+          description: "Chưa có file Invoice nào được lưu.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch {
+      toast({
+        title: "Lỗi tải file",
+        description: "Không thể tải nội dung file từ server.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
@@ -87,10 +131,13 @@ export default function InvoiceTable({
 
   const handleValueChange = (key: string, value: string) => {
     onValueChange(key, value);
-  };
-
-  const handleTextValueChange = (value: string) => {
-    handleNumberOfInvoice(value);
+    const kk = autoMappingFields[key];
+    if (kk) onValueChange(kk, value);
+    if (key == 'Invoice Date') {
+      autoMappingByInvoiceDate.forEach((keyMap) => {
+        onValueChange(keyMap, value);
+      });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, key: string) => {
@@ -120,13 +167,13 @@ export default function InvoiceTable({
     <>
       <div className="w-full">
         <form className="max-w-xs mb-[10px] flex items-center gap-4">
-          <div class="flex flex-row w-full min-w-full">
-            <div class="basis-1/4">
-              <div class="w-full max-w-sm relative mt-4 mr-2">
-                <label class="block mb-2 text-sm text-slate-600">Number of Invoice Line Numbers</label>
+          <div className="flex flex-row w-full min-w-full">
+            <div className="basis-1/4">
+              <div className="w-full max-w-sm relative mt-4 mr-2">
+                <label className="block mb-2 text-sm text-slate-600">Number of Invoice Line Numbers</label>
                 <input type="email"
                   onChange={(e) => handleNumberOfInvoiceLineNumbers(e.target.value)} onKeyDown={(e) => handleNumberOfInvoiceLineNumbers(e.target.value)} onBlur={handleBlur}
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
                 />
                 {/*<select
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -145,12 +192,12 @@ export default function InvoiceTable({
                 </select>*/}
               </div>
             </div>
-            <div class="basis-1/4">
-              <div class="w-full max-w-sm relative mt-4 ml-2 mr-2">
-                <label class="block mb-2 text-sm text-slate-600">Number of Invoices</label>
+            <div className="basis-1/4">
+              <div className="w-full max-w-sm relative mt-4 ml-2 mr-2">
+                <label className="block mb-2 text-sm text-slate-600">Number of Invoices</label>
                 <input type="email"
                   onChange={(e) => handleNumberOfInvoices(e.target.value)} onKeyDown={(e) => handleNumberOfInvoices(e.target.value)} onBlur={handleBlur}
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your text"
                 />
               </div>
             </div>
@@ -235,6 +282,13 @@ export default function InvoiceTable({
           Create file
         </button>
         <button
+          onClick={handleLoadFile}
+          className="text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-amber-600 dark:hover:bg-amber-700 dark:focus:ring-amber-800"
+          type="button"
+        >
+          Load file
+        </button>
+        <button
           onClick={openViewDataModal}
           className="text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
           type="button"
@@ -247,6 +301,7 @@ export default function InvoiceTable({
             open={showModal}
             typeFile="Invoice"
             data={resultHL7Text}
+            numbers_created={duplicateOption === "Normal" ? 1 : duplicateOption}
           />
         )}
         {showViewDataModal && (
@@ -254,6 +309,7 @@ export default function InvoiceTable({
             onClose={closeViewDataModal}
             open={showViewDataModal}
             data={data}
+            rawContent={loadedFileContent}
           />
         )}
       </div>

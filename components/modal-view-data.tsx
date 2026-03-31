@@ -3,12 +3,15 @@ import React from "react";
 interface ViewDataModalProps {
   open: boolean;
   onClose: () => void;
-  data: Record<string, any> | Record<string, any>[] | null;
+  data?: Record<string, any> | Record<string, any>[] | null;
+  /** When set, show this raw file content instead of data table */
+  rawContent?: string | null;
 }
 
-export default function ViewDataModal({ open, onClose, data }: ViewDataModalProps) {
-  if (!open || !data) return null;
-  const isArray = Array.isArray(data);
+export default function ViewDataModal({ open, onClose, data, rawContent }: ViewDataModalProps) {
+  if (!open) return null;
+  const isArray = !rawContent && data && Array.isArray(data);
+  const showTable = !rawContent && data;
 
   return (
     <div
@@ -48,10 +51,14 @@ export default function ViewDataModal({ open, onClose, data }: ViewDataModalProp
           <span className="sr-only">Close modal</span>
         </button>
         <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-center">
-          View Data
+          {rawContent ? "Nội dung file đã lưu" : "View Data"}
         </h2>
         <div className="overflow-x-auto">
-          {isArray ? (
+          {rawContent != null ? (
+            <pre className="p-4 bg-gray-50 rounded-lg text-xs sm:text-sm overflow-auto max-h-[70vh] whitespace-pre-wrap break-words">
+              {rawContent}
+            </pre>
+          ) : isArray ? (
             (data as Record<string, any>[]).map((block, idx) => (
               <div key={idx} className="mb-8 border border-gray-300 rounded-lg shadow-sm">
                 <div className="bg-gray-100 px-4 py-2 font-semibold text-gray-700 rounded-t-lg">
@@ -73,10 +80,10 @@ export default function ViewDataModal({ open, onClose, data }: ViewDataModalProp
                 </table>
               </div>
             ))
-          ) : (
+          ) : showTable ? (
             <table className="min-w-full border border-gray-200 text-xs sm:text-sm">
               <tbody>
-                {Object.entries(data).map(([key, value]) => (
+                {Object.entries(data!).map(([key, value]) => (
                   <tr key={key} className="border-b last:border-b-0">
                     <td className="py-2 px-2 sm:py-2 sm:px-4 font-medium text-gray-700 bg-gray-50 w-1/3">
                       {key}
@@ -88,7 +95,7 @@ export default function ViewDataModal({ open, onClose, data }: ViewDataModalProp
                 ))}
               </tbody>
             </table>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

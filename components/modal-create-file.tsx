@@ -4,11 +4,19 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
+const FILE_TYPE_NAME_MAP: Record<string, string> = {
+  contract: "Contract",
+  POH: "POH",
+  IM: "IM",
+  Invoice: "Invoice",
+};
+
 interface ModalCreateFileProps {
-  typeFile: "contract" | "POH" | "IM" | "Invoice"
+  typeFile: "contract" | "POH" | "IM" | "Invoice";
   open: boolean;
   onClose: () => void;
-  data: any
+  data: any;
+  numbers_created?: number;
 }
 
 // Tạo schema validation với yup
@@ -27,7 +35,7 @@ type FormValues = {
   fileName: string;
 };
 
-export default function ModalCreateFile({ typeFile, open, onClose, data }: ModalCreateFileProps) {
+export default function ModalCreateFile({ typeFile, open, onClose, data, numbers_created = 1 }: ModalCreateFileProps) {
   const {
     register,
     handleSubmit,
@@ -49,25 +57,52 @@ export default function ModalCreateFile({ typeFile, open, onClose, data }: Modal
       .join("\n");
   }
 
-  const onSubmit = (formData: FormValues) => {
-    const text = data;
+  const onSubmit = async (formData: FormValues) => {
+    const text = typeof data === "string" ? data : JSON.stringify(data);
+
+    try {
+      const fileTypeName = FILE_TYPE_NAME_MAP[typeFile] ?? "Contract";
+      const res = await fetch("/api/build_file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileTypeName,
+          content: text,
+          numbers_created: numbers_created ?? 1,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save to database");
+      }
+    } catch (e) {
+      toast({
+        title: "Lỗi lưu database",
+        description: e instanceof Error ? e.message : "Không thể lưu file vào bảng FileType/FileBuild",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = formData.fileName.endsWith('.txt') ? formData.fileName : `${formData.fileName}.txt`;
+    a.download = formData.fileName.endsWith(".txt") ? formData.fileName : `${formData.fileName}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
     toast({
-      title: "File created successfully",
-      description: "Content has been created as a file!",
+      title: "File đã tạo và lưu",
+      description: "Nội dung đã được tải xuống và lưu vào database.",
       duration: 2000,
-    }); 
-    
+    });
+
     reset();
     onClose();
   };

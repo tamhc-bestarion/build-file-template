@@ -1,5 +1,48 @@
 import type { ContractDataType, PODataType, IMDataType, InvoiceDataType } from "./types"
 
+/**
+ * Parse Contract HL7 (MSH + CTR + ITM + VND + PKG segments) into ContractDataType.
+ * CTR: [1]=Contract Number, [2]=GPO ID, [3]=Status, [4]=Contract Start Date, [5]=Contract End Date, [13]=GPO Name, [19]=Supplier Type
+ * ITM: [1]=Org Item ID, [2]=Original Item Desc, [7]=MFR ID, [8]=MFR Name, [9]=MFR Item ID, [27]=Contract Item Start Date, [28]=Contract Item End Date
+ * VND: [2]=Vendor ID, [3]=Vendor Name, [4]=Vendor Item ID, [6]=Corp Number (^...)
+ * PKG: [2]=Contract UOM, [10]=Contract Price, [12]=Vendor Item ID (QOE implied)
+ */
+export function parseContractHL7(content: string): ContractDataType {
+  const lines = (content ?? "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const ctr = lines.find((l) => l.startsWith("CTR|"))?.split("|") ?? [];
+  const itm = lines.find((l) => l.startsWith("ITM|"))?.split("|") ?? [];
+  const vnd = lines.find((l) => l.startsWith("VND|"))?.split("|") ?? [];
+  const pkg = lines.find((l) => l.startsWith("PKG|"))?.split("|") ?? [];
+
+  const p = (arr: string[], idx: number) => arr[idx] ?? "";
+  const pc = (arr: string[], idx: number, part: number) => (arr[idx] ?? "").split("^")[part] ?? "";
+
+  return {
+    Action: "MAD",
+    "Contract Number": p(ctr, 1),
+    "GPO ID": p(ctr, 2),
+    Status: p(ctr, 3),
+    "Contract Start Date": p(ctr, 4),
+    "Contract End Date": p(ctr, 5),
+    "GPO Name": p(ctr, 13),
+    "Supplier Type": p(ctr, 19),
+    "Org Item ID": p(itm, 1),
+    "Original Item Desc": p(itm, 2),
+    "MFR ID": p(itm, 7),
+    "MFR Name": p(itm, 8),
+    "MFR Item ID": p(itm, 9),
+    "Contract Item Start Date": p(itm, 27),
+    "Contract Item End Date": p(itm, 28),
+    "Vendor ID": p(vnd, 2),
+    "Vendor Name": p(vnd, 3),
+    "Vendor Item ID": p(vnd, 4),
+    "Corp Number": pc(vnd, 6, 0),
+    "Contract UOM": p(pkg, 2),
+    "Contract QOE": "1",
+    "Contract Price": p(pkg, 10),
+  };
+}
+
 export const contractData: ContractDataType = {
   Action: "MAD",
   "Contract Number": "CNB10041025",
@@ -26,33 +69,69 @@ export const contractData: ContractDataType = {
 }
 
 export const poData: PODataType = {
-  "PO Number": "2025010444",
-  "PO Date": "20250401",
+  "PO Number": "20260310",
   "PO Line Number": "1",
+  "Item Vendor Item ID": "VCN20260310",
+  "Item MFR Item ID": "MCN20260310",
+  "PO Date": "20260310",
+  "Org Item ID": "POH20260310",
+  "Original Item Desc": "POH 20260310",
   "PO Qty": "9",
   "PO UOM": "EA",
   "PO Price": "99.9",
   "Vendor number": "V03775",
   "Item Vendor Name": "CARDINAL HEALTH TEST",
-  "Item Vendor Item ID": "VCN202503242",
   "MFR ID": "1757",
   "Item MFR Name": "JOHNSON AND JOHNSON HOSPITAL SERV.",
-  "Item MFR Item ID": "MCN202503242",
-  "Org Item ID": "X2345",
   GL: "299-95001731-8303200",
-  "Original Item Desc": "New item 2",
   "Received Qty": "9",
 }
 
+/**
+ * Parse POH EDI (BEG, DTM, PO1, PID, QTY segments, ^ and ~ delimiters) into PODataType.
+ * BEG^04^SA^PO Number^^PO Date, DTM^097^PO Date, PO1^..., PID^F^^^^^Original Item Desc, QTY^87^Received Qty
+ * PO1: [1]=PO Line Number, [2]=PO Qty, [3]=PO UOM, [4]=PO Price, [7]=Item Vendor Name~Vendor number~Item MFR Name~MFR ID, [9]=Item MFR Item ID, [11]=Item Vendor Item ID, [15]=Org Item ID, [17]=GL
+ */
+export function parsePOHHL7(content: string): PODataType {
+  const lines = (content ?? "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const beg = lines.find((l) => l.startsWith("BEG^"))?.split("^") ?? [];
+  const dtm = lines.find((l) => l.startsWith("DTM^"))?.split("^") ?? [];
+  const po1 = lines.find((l) => l.startsWith("PO1^"))?.split("^") ?? [];
+  const pid = lines.find((l) => l.startsWith("PID^"))?.split("^") ?? [];
+  const qty = lines.find((l) => l.startsWith("QTY^"))?.split("^") ?? [];
+
+  const p = (arr: string[], idx: number) => arr[idx] ?? "";
+  const mfParts = (p(po1, 7) ?? "").split("~");
+
+  return {
+    "PO Number": p(beg, 3),
+    "PO Date": p(dtm, 2) || p(beg, 5),
+    "PO Line Number": p(po1, 1),
+    "PO Qty": p(po1, 2),
+    "PO UOM": p(po1, 3),
+    "PO Price": p(po1, 4),
+    "Vendor number": mfParts[1] ?? "",
+    "Item Vendor Name": mfParts[0] ?? "",
+    "Item Vendor Item ID": p(po1, 11),
+    "MFR ID": mfParts[3] ?? "",
+    "Item MFR Name": mfParts[2] ?? "",
+    "Item MFR Item ID": p(po1, 9),
+    "Org Item ID": p(po1, 15),
+    GL: p(po1, 17),
+    "Original Item Desc": p(pid, 6),
+    "Received Qty": p(qty, 2),
+  };
+}
+
 export const itemMasterData: IMDataType = {
+  "Org Item ID": "ITEM20260310",
+  "Vendor Item ID": "20260310",
+  "MFR Item ID": "20260310",
+  "Item Desc": "Item 20260310",
   "Vendor ID": "91",
   "Vendor Name": "ACCUTOME INC",
-  "Vendor Item ID": "250424015A",
-  "Org Item ID": "ITM250424015",
-  "Item Desc": "Item 250424015",
   "MFR ID": "1319",
   "MFR Name": "WILLIS PRINTING",
-  "MFR Item ID": "250424015B",
   "UOM": "EA",
   "QOE": "1",
   "Price": "50",
@@ -63,14 +142,329 @@ export const itemMasterData: IMDataType = {
   "Location ID": "2087"
 }
 
+/**
+ * Parse HL7 Item Master (MSH + ZIT + ZIN + optional ZIA) into IMDataType.
+ * ZIT: [1]=Vendor ID^Vendor Item ID^Price^UOM, [2]=QOE, [5]=Item Desc, [14]=MFR ID, [15]=MFR Item ID, [29]=Org Item ID, [36]=Vendor Name, [45]=MFR Name, [47]=Corp Number, [48]=UOM
+ * ZIN: [1]=Location ID^..., ZIA: [1]=Org Item ID, [2]=Corp Number^Corp Name, [4]=Expense Code Number^Expense Code Name
+ */
+export function parseItemMasterHL7(hl7: string): IMDataType {
+  const zitRaw = hl7.match(/ZIT\|[^\r\n]*/)?.[0] ?? ""
+  const zinRaw = hl7.match(/ZIN\|[^\r\n]*/)?.[0] ?? ""
+  const ziaRaw = hl7.match(/ZIA\|[^\r\n]*/)?.[0] ?? ""
+
+  const zit = zitRaw.split("|")
+  const zin = zinRaw.split("|")
+  const zia = ziaRaw.split("|")
+
+  const p = (arr: string[], idx: number) => arr[idx] ?? ""
+  const pc = (arr: string[], idx: number, part: number) => (arr[idx] ?? "").split("^")[part] ?? ""
+
+  const zit1 = zit[1] ?? ""
+  const zit1Parts = zit1.split("^")
+
+  return {
+    "Vendor ID": zit1Parts[0] ?? "",
+    "Vendor Item ID": zit1Parts[1] ?? "",
+    "Price": zit1Parts[2] ?? "",
+    "UOM": p(zit, 48) || (zit1Parts[3] ?? ""),
+    "QOE": p(zit, 2),
+    "Item Desc": p(zit, 5),
+    "MFR ID": p(zit, 13),
+    "MFR Name": p(zit, 45),
+    "MFR Item ID": p(zit, 14),
+    "Org Item ID": p(zit, 29) || p(zia, 1),
+    "Vendor Name": p(zit, 36) || (zin.length > 29 ? zin[29] : ""),
+    "Corp Number": p(zit, 47),
+    "Corp Name": pc(zia, 2, 1),
+    "Expense Code Number": pc(zia, 4, 0),
+    "Expense Code Name": pc(zia, 4, 1),
+    "Location ID": (zin[1] ?? "").split("^")[0] ?? "",
+  }
+}
+
+/**
+ * Parse HL7 invoice string (MSH + ZMI + ZML segments) into InvoiceDataType.
+ *
+ * ZMI pipe positions → column mapping:
+ *   [1]  col0^col1   Invoice ID ^ Invoice IDB
+ *   [2]  col2        Invoice Number
+ *   [3]  col3        Invoice Date
+ *   [4]  col4        Invoice Type
+ *   [5]  col5        Corporation Account Number
+ *   [6]  col6        Vendor Code
+ *   [7]  col7        Due Date
+ *   [8]  col8        Voucher Number
+ *   [9]  col9        Gross Invoice Amount
+ *   [10] col10       Net Invoice Amount
+ *   [11] col11       Short Pay Amount
+ *   [12] col12       Vendor Term Amount
+ *   [13] col13       Freight Amount
+ *   [14] col14       State Tax and Provincial Refundable Tax Amount
+ *   [15] col15       County Tax Amount
+ *   [16] col16       City Tax Amount
+ *   [17] col17       Miscellaneous Amount
+ *   [18] col18       Batch Number
+ *   [19] col19^col20 PO Record ID ^ PO Record IDB
+ *   [20] col21       PO Number
+ *   [21] col22       Note
+ *   [22] col23       Code 1099
+ *   [23] col24       Amount 1099
+ *   [24] col25       User Name
+ *   [25] col26^col27 Account Group Record ID ^ IDB
+ *   [26] col28       Bank Account
+ *   [27] col29       Check Number
+ *   [28] col30       Reference Number
+ *   [29] col31       Check Date
+ *   [30] col32       Check Amount
+ *   [31] col33       Check Name
+ *   [32] col34^col35 Vendor Remit Code ^ Vendor Remit Name
+ *   [33] col36       Vendor Term Code
+ *   [34] col37       Single Check Indicator
+ *   [35] col38       Fiscal Period
+ *   [36] col39       Discount Date
+ *   [37] col40       Invoice Discount Amount
+ *   [38] col41       Invoice Status Field
+ *   [39] col42       Interface Status Change Date
+ *   [40] col43       Record Created Date
+ *   [41] col44^col45 Record Create User ID ^ IDB
+ *   [42] col46       Record Updated Date
+ *   [43] col47^col48 Record Update User ID ^ IDB
+ *   [44] col49       User Defined Text Name
+ *   [45] col50       User Defined Text Value
+ *   [46] col51       User Defined Memo Name
+ *   [47] col52       User Defined Memo Value
+ *   (col53/col54 omitted when empty — trailing HL7 fields)
+ *   [48] col55       Miscellaneous Discount Amount
+ *   [49] col56       Net Payment Amount
+ *   [50] col57       Remit Vendor Net Due Days
+ *   [51] col58       Vendor Discount Rate
+ *   [52] col59       Remit Vendor Discount Due Days
+ *   [53] col60       End Month Indicator
+ *
+ * ZML pipe positions → column mapping:
+ *   [1]  col61^col62  Invoice Line ID ^ Invoice Line IDB
+ *   [2]  col63^col64  Line Invoice ID ^ Line Invoice IDB
+ *   [3]  col65        Invoice Line Number
+ *   [4]  col66        Item Description
+ *   [5]  col67        Invoice Line Quantity
+ *   [6]  col68        Invoice Line UOM
+ *   [7]  col69        Invoice Line Price
+ *   [8]  col70        Debit Amount Indicator
+ *   [9]  col71        Invoice Line Pay Price
+ *   [10] col72        Line Corporation Account Number
+ *   [11] col73        Freight Code
+ *   [12] col74        Freight With Tax
+ *   [13] col75        State Compound Tax
+ *   [14] col76        County Compound Tax
+ *   [15] col77        City Compound Tax
+ *   [16] col78        Invoice Line Miscellaneous Amount
+ *   [17] col79        Approved Price
+ *   [18] col80        Approved Quantity
+ *   [19] col81^col82  PO Line Record ID ^ PO Line Record IDB
+ *   [20] col83        PO Line Number
+ *   [21] col84        PO Price
+ *   [22] col85        Organization Item ID
+ *   [23] col86        Sub Account Number
+ *   [24] col87        Expense Code Account Number
+ *   [25] col88        Cost Center Account Number
+ *   [26] col89        Line Code 1099
+ *   [27] col90        Line Amount 1099
+ *   [28] col91        Line Notes
+ *   [29] col92        Invoice Line Discount Amount
+ *   [30] col93        Line Discount Rate
+ *   [31] col94        Payment Quantity
+ *   [32] col95        Payment UOM
+ *   [33] col96        Interface Status
+ *   [34] col97        Reviewed Date
+ *   [35] col98^col99  Discrepant Note Record ID ^ IDB
+ *   [36] col100^col101 Resolved Note Record ID ^ IDB
+ *   [37] col102^col103 Deliver Location Record ID ^ IDB
+ *   [38] col104       Line Record Created Date
+ *   [39] col105^col106 Line Record Create User ID ^ IDB
+ *   [40] col107       Line Record Updated Date
+ *   [41] col108^col109 Line Record Update User ID ^ IDB
+ *   [42] col110       Misc Discount Amount
+ *   [43] col111       Invoice Line Net Payment Amount
+ *   [44] col112^col113 Project Code ^ Project Name
+ *   [45] col114^col115 Sub-Project Code ^ Sub-Project Name
+ *   [46] col116       State Province Account Amount
+ *   [47] col117       Accrued County Tax Amount
+ *   [48] col118       Accrued City Tax Amount
+ *   [49] col119       FRT State Province Account Amount
+ *   [50] col120       FRT County Tax Amount
+ *   [51] col121       FRT City Tax Amount
+ */
+export function parseInvoiceHL7(hl7: string): InvoiceDataType {
+  const zmiRaw = hl7.match(/ZMI\|[^\r\n]*/)?.[0] ?? ""
+  const zmlRaw = hl7.match(/ZML\|[^\r\n]*/)?.[0] ?? ""
+
+  const zmi = zmiRaw.split("|")
+  const zml = zmlRaw.split("|")
+
+  const p = (arr: string[], idx: number) => arr[idx] ?? ""
+  const pc = (arr: string[], idx: number, part: number) => (arr[idx] ?? "").split("^")[part] ?? ""
+
+  return {
+    // --- ZMI: Invoice Header ---
+    "Invoice ID":                                      pc(zmi,  1, 0), // col0
+    "Invoice IDB":                                     pc(zmi,  1, 1), // col1
+    "Invoice Number":                                   p(zmi,  2),    // col2
+    "Invoice Date":                                     p(zmi,  3),    // col3
+    "Invoice Type":                                     p(zmi,  4),    // col4
+    "Corporation Account Number":                       p(zmi,  5),    // col5
+    "Vendor Code":                                      p(zmi,  6),    // col6
+    "Due Date":                                         p(zmi,  7),    // col7
+    "Voucher Number":                                   p(zmi,  8),    // col8
+    "Gross Invoice Amount":                             p(zmi,  9),    // col9
+    "Net Invoice Amount":                               p(zmi, 10),    // col10
+    "Short Pay Amount":                                 p(zmi, 11),    // col11
+    "Vendor Term Amount":                               p(zmi, 12),    // col12
+    "Freight Amount":                                   p(zmi, 13),    // col13
+    "State Tax and Provincial Refundable Tax Amount":   p(zmi, 14),    // col14
+    "County Tax Amount":                                p(zmi, 15),    // col15
+    "City Tax Amount":                                  p(zmi, 16),    // col16
+    "Miscellaneous Amount":                             p(zmi, 17),    // col17
+    "Batch Number":                                     p(zmi, 18),    // col18
+    "PO Record ID":                                    pc(zmi, 19, 0), // col19
+    "PO Record IDB":                                   pc(zmi, 19, 1), // col20
+    "PO Number":                                        p(zmi, 20),    // col21
+    "Note":                                             p(zmi, 21),    // col22
+    "Code 1099":                                        p(zmi, 22),    // col23
+    "Amount 1099":                                      p(zmi, 23),    // col24
+    "User Name":                                        p(zmi, 24),    // col25
+    "Account Group Record ID":                         pc(zmi, 25, 0), // col26
+    "Account Group Record IDB":                        pc(zmi, 25, 1), // col27
+    "Bank Account":                                     p(zmi, 26),    // col28
+    "Check Number":                                     p(zmi, 27),    // col29
+    "Reference Number":                                 p(zmi, 28),    // col30
+    "Check Date":                                       p(zmi, 29),    // col31
+    "Check Amount":                                     p(zmi, 30),    // col32
+    "Check Name":                                       p(zmi, 31),    // col33
+    "Vendor Remit Code":                               pc(zmi, 32, 0), // col34
+    "Vendor Remit Name":                               pc(zmi, 32, 1), // col35
+    "Vendor Term Code":                                 p(zmi, 33),    // col36
+    "Single Check Indicator":                           p(zmi, 34),    // col37
+    "Fiscal Period":                                    p(zmi, 35),    // col38
+    "Discount Date":                                    p(zmi, 36),    // col39
+    "Invoice Discount Amount":                          p(zmi, 37),    // col40
+    "Invoice Status Field":                             p(zmi, 38),    // col41
+    "Interface Status Change Date":                     p(zmi, 39),    // col42
+    "Record Created Date":                              p(zmi, 40),    // col43
+    "Record Create User ID":                           pc(zmi, 41, 0), // col44
+    "Record Create User IDB":                          pc(zmi, 41, 1), // col45
+    "Record Updated Date":                              p(zmi, 42),    // col46
+    "Record Update User ID":                           pc(zmi, 43, 0), // col47
+    "Record Update User IDB":                          pc(zmi, 43, 1), // col48
+    "User Defined Text Name":                           p(zmi, 44),    // col49
+    "User Defined Text Value":                          p(zmi, 45),    // col50
+    "User Defined Memo Name":                           p(zmi, 46),    // col51
+    "User Defined Memo Value":                          p(zmi, 47),    // col52
+    "User Defined Date Name":                          "",             // col53 (omitted when empty)
+    "User Defined Date Value":                         "",             // col54 (omitted when empty)
+    "Miscellaneous Discount Amount":                    p(zmi, 48),    // col55
+    "Net Payment Amount":                               p(zmi, 49),    // col56
+    "Remit Vendor Net Due Days":                        p(zmi, 50),    // col57
+    "Vendor Discount Rate":                             p(zmi, 51),    // col58
+    "Remit Vendor Discount Due Days":                   p(zmi, 52),    // col59
+    "End Month Indicator":                              p(zmi, 53),    // col60
+
+    // --- ZML: Invoice Line ---
+    "Invoice Line ID":                                 pc(zml,  1, 0), // col61
+    "Invoice Line IDB":                                pc(zml,  1, 1), // col62
+    "Line Invoice ID":                                 pc(zml,  2, 0), // col63
+    "Line Invoice IDB":                                pc(zml,  2, 1), // col64
+    "Invoice Line Number":                              p(zml,  3),    // col65
+    "Item Description":                                 p(zml,  4),    // col66
+    "Invoice Line Quantity":                            p(zml,  5),    // col67
+    "Invoice Line UOM":                                 p(zml,  6),    // col68
+    "Invoice Line Price":                               p(zml,  7),    // col69
+    "Debit Amount Indicator":                           p(zml,  8),    // col70
+    "Invoice Line Pay Price":                           p(zml,  9),    // col71
+    "Line Corporation Account Number":                  p(zml, 10),    // col72
+    "Freight Code":                                     p(zml, 11),    // col73
+    "Freight With Tax":                                 p(zml, 12),    // col74
+    "State Compound Tax":                               p(zml, 13),    // col75
+    "County Compound Tax":                              p(zml, 14),    // col76
+    "City Compound Tax":                                p(zml, 15),    // col77
+    "Invoice Line Miscellaneous Amount":                p(zml, 16),    // col78
+    "Approved Price":                                   p(zml, 17),    // col79
+    "Approved Quantity":                                p(zml, 18),    // col80
+    "PO Line Record ID":                               pc(zml, 19, 0), // col81
+    "PO Line Record IDB":                              pc(zml, 19, 1), // col82
+    "PO Line Number":                                   p(zml, 20),    // col83
+    "PO Price":                                         p(zml, 21),    // col84
+    "Organization Item ID":                             p(zml, 22),    // col85
+    "Sub Account Number":                               p(zml, 23),    // col86
+    "Expense Code Account Number":                      p(zml, 24),    // col87
+    "Cost Center Account Number":                       p(zml, 25),    // col88
+    "Line Code 1099":                                   p(zml, 26),    // col89
+    "Line Amount 1099":                                 p(zml, 27),    // col90
+    "Line Notes":                                       p(zml, 28),    // col91
+    "Invoice Line Discount Amount":                     p(zml, 29),    // col92
+    "Line Discount Rate":                               p(zml, 30),    // col93
+    "Payment Quantity":                                 p(zml, 31),    // col94
+    "Payment UOM":                                      p(zml, 32),    // col95
+    "Interface Status":                                 p(zml, 33),    // col96
+    "Reviewed Date":                                    p(zml, 34),    // col97
+    "Discrepant Note Record ID":                       pc(zml, 35, 0), // col98
+    "Discrepant Note Record IDB":                      pc(zml, 35, 1), // col99
+    "Resolved Note Record ID":                         pc(zml, 36, 0), // col100
+    "Resolved Note Record IDB":                        pc(zml, 36, 1), // col101
+    "Deliver Location Record ID":                      pc(zml, 37, 0), // col102
+    "Deliver Location Record IDB":                     pc(zml, 37, 1), // col103
+    "Line Record Created Date":                         p(zml, 38),    // col104
+    "Line Record Create User ID":                      pc(zml, 39, 0), // col105
+    "Line Record Create User IDB":                     pc(zml, 39, 1), // col106
+    "Line Record Updated Date":                         p(zml, 40),    // col107
+    "Line Record Update User ID":                      pc(zml, 41, 0), // col108
+    "Line Record Update User IDB":                     pc(zml, 41, 1), // col109
+    "Misc Discount Amount":                             p(zml, 42),    // col110
+    "Invoice Line Net Payment Amount":                  p(zml, 43),    // col111
+    "Project Code":                                    pc(zml, 44, 0), // col112
+    "Project Name":                                    pc(zml, 44, 1), // col113
+    "Sub-Project Code":                                pc(zml, 45, 0), // col114
+    "Sub-Project Name":                                pc(zml, 45, 1), // col115
+    "State Province Account Amount":                    p(zml, 46),    // col116
+    "Accrued County Tax Amount":                        p(zml, 47),    // col117
+    "Accrued City Tax Amount":                          p(zml, 48),    // col118
+    "FRT State Province Account Amount":                p(zml, 49),    // col119
+    "FRT County Tax Amount":                            p(zml, 50),    // col120
+    "FRT City Tax Amount":                              p(zml, 51),    // col121
+  }
+}
+
+// const highlightedFields: (keyof InvoiceDataType)[] = [
+//     "Invoice ID",
+//     "Invoice Date", // INV Date
+//     "Invoice Number",
+//     "Corporation Account Number",
+//     "Cost Center Account Number",
+//     "Expense Code Account Number",
+//     "PO Number",
+//     "Vendor Code",
+//     "Vendor Remit Name",
+//     "PO Line Record ID",
+//     "PO Line Record IDB",
+//     "Organization Item ID"
+//   ];
+
 export const invoiceData: InvoiceDataType = {
   "Invoice ID": "2500837", // column_0 -- 2500837
-  "Invoice IDB": "1270", // column_1 -- 1270
-  "Invoice Number": "44966978", // column_2 -- 44966978
   "Invoice Date": "20141007000000", // column_3 -- 20141007000000
-  "Invoice Type" : "P", // column_4 -- P
+  "Invoice Number": "44966978", // column_2 -- 44966978
   "Corporation Account Number" : "10", // column_5 - 10
+  "PO Number" : "325630", // column_21 -- 325630
   "Vendor Code" : "2271", // column_6 -- 2271
+  "Vendor Remit Name" : "BAXTER HEALTHCARE CORP", // column_35 -- BAXTER HEALTHCARE CORP
+  "PO Line Record ID": "1495150", // column_81 -- 1495150
+  "PO Line Record IDB": "1270", // column_82 -- 1270
+  "PO Line Number": "1", // column_83 -- 1
+  "Organization Item ID": "86804", // column_85 -- 86804
+  "Expense Code Account Number": "6375", // column_87 -- 6375
+  "Cost Center Account Number": "800", // column_88 -- 800
+  "Invoice IDB": "1270", // column_1 -- 1270
+  "Invoice Type" : "P", // column_4 -- P
+
   "Due Date" : "20141206000000", // column_7 -- 20141206000000
   "Voucher Number" : "2447316", // column_8 -- 2447316
   "Gross Invoice Amount" : "3766.4000", // column_9 -- 3766.4000
@@ -85,7 +479,7 @@ export const invoiceData: InvoiceDataType = {
   "Batch Number" : "0", // column_18 -- 0
   "PO Record ID" : "325616", // column_19 -- 325616
   "PO Record IDB" : "1270", // column_20 -- 1270
-  "PO Number" : "325630", // column_21 -- 325630
+
   "Note" : "&quot;&quot;", // column_22 -- &quot;&quot;
   "Code 1099" : "&quot;&quot;", // column_23 -- &quot;&quot;
   "Amount 1099" : "0.0000", // column_24 -- 0.0000
@@ -99,7 +493,7 @@ export const invoiceData: InvoiceDataType = {
   "Check Amount" : "0.0000", // column_32 -- 0.0000
   "Check Name" : "&quot;&quot;", // column_33 -- &quot;&quot;
   "Vendor Remit Code" : "BAX005", // column_34 -- BAX005
-  "Vendor Remit Name" : "BAXTER HEALTHCARE CORP", // column_35 -- BAXTER HEALTHCARE CORP
+
   "Vendor Term Code" : "NET 60", // column_36 -- NET 60
   "Single Check Indicator" : "N", // column_37 -- N
   "Fiscal Period" : "01262015", // column_38 -- 01262015
@@ -146,14 +540,11 @@ export const invoiceData: InvoiceDataType = {
   "Invoice Line Miscellaneous Amount": "0.0000", // column_78 -- 0.0000
   "Approved Price": "1858.2000", // column_79 -- 1858.2000
   "Approved Quantity": "2.0000", // column_80 -- 2.0000
-  "PO Line Record ID": "1495150", // column_81 -- 1495150
-  "PO Line Record IDB": "1270", // column_82 -- 1270
-  "PO Line Number": "1", // column_83 -- 1
+
   "PO Price": "1858.2000", // column_84 -- 1858.2000
-  "Organization Item ID": "86804", // column_85 -- 86804
+
   "Sub Account Number": "&quot;&quot;", // column_86 -- &quot;&quot;
-  "Expense Code Account Number": "6375", // column_87 -- 6375
-  "Cost Center Account Number": "800", // column_88 -- 800
+
   "Line Code 1099": "&quot;&quot;", // column_89 -- &quot;&quot;
   "Line Amount 1099": "&quot;&quot;", // column_90 -- &quot;&quot;
   "Line Notes": "&quot;&quot;", // column_91 -- &quot;&quot;

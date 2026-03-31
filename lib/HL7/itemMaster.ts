@@ -4,17 +4,36 @@ export function formatAsItemMaster(data: DataType, duplicateCount: number = 1, u
   const item = data as IMDataType;
   const highlightedFields: (keyof IMDataType)[] = [
     "Vendor Item ID",
+    "Item Desc",
     "Org Item ID", 
     "MFR Item ID"
   ];
 
   let blocks: string[] = [];
+  const incrementWithPrefix = (prefix: string, index: number): string => {
+    let number = 1;
+    if (prefix) {
+      // Extract the number from the previous value
+      const match = prefix.match(/\d+$/);
+      if (match) {
+        const n = match[0];
+        const number = parseInt(n, 10) + index;
+        const padLength = prefix.length - (match.index ?? 0);
+        return prefix.replaceAll(n, number.toString().padStart(padLength || 1, '0'));
+      }
+    }
+    return `${prefix}${number}`;
+  }
+
   for (let i = 1; i <= duplicateCount; i++) {
     const modifiedData = { ...item };
-    highlightedFields.forEach((field) => {
-      modifiedData[field] =
-        item[field] + (i > 1 ? `-${i}` : "");
-    });
+    if (i > 1) {
+      highlightedFields.forEach((field) => {
+        // modifiedData[field] =
+          // item[field] + (i > 1 ? `-${i}` : "");
+          modifiedData[field] = incrementWithPrefix(modifiedData[field], i);
+      });
+    }
 
     const baseLines = [
       `MSH|^~\\&amp;|SupplyChain|send facility|||541750311414||MFN^MAD|1549478123|P|2.2`,
@@ -27,7 +46,7 @@ export function formatAsItemMaster(data: DataType, duplicateCount: number = 1, u
       baseLines.push(`ZIA|${modifiedData["Org Item ID"]}|${modifiedData["Corp Number"]}^${modifiedData["Corp Name"]}||${modifiedData["Expense Code Number"]}^${modifiedData["Expense Code Name"]}|||`);
     }
 
-    blocks.push(baseLines.join("\r\n"));
+    blocks.push(baseLines.join('\r'));
   }
-  return blocks.join("\r\n").split("\r\n");
+  return blocks.join('\r').split('\r');
 } 

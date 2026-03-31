@@ -11,8 +11,9 @@ import {
   formatAsTabular,
   formatAsTabularDelimited,
 } from "@/lib/formatter";
+import { toast } from "@/components/ui/use-toast";
+import { parseContractHL7 } from "@/lib/data";
 
-import { formatNumberShort } from "../constants/FormatData"
 interface ContractTableProps {
   data: DataType;
   selectedRow: number | null;
@@ -34,25 +35,54 @@ export default function ContractTable({
   ];
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
-  const [duplicateOption, setDuplicateOption] = useState<"Normal" | number>(
-    "Normal"
-  );
+  const [numberOfItems, setNumberOfItems] = useState<number>(1);
 
-  const handleDuplicateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    console.log("value options: ", val)
-    if (val === "Normal") setDuplicateOption("Normal");
-    else
-      setDuplicateOption(
-        Number(val.replace("Create-", "").replace("k", "000"))
-      );
+  const handleNumberOfItemsChange = (value: string) => {
+    const num = parseInt(value, 10);
+    if (!isNaN(num) && num > 0) setNumberOfItems(num);
+    else if (value === "") setNumberOfItems(1);
   };
 
   const [showModal, setShowModal] = useState(false);
   const [showViewDataModal, setShowViewDataModal] = useState(false);
+  const [loadedFileContent, setLoadedFileContent] = useState<string | null>(null);
 
-  const openViewDataModal = () => setShowViewDataModal(true);
+  const openViewDataModal = () => {
+    setLoadedFileContent(null);
+    setShowViewDataModal(true);
+  };
   const closeViewDataModal = () => setShowViewDataModal(false);
+
+  const handleLoadFile = async () => {
+    try {
+      const res = await fetch("/api/build_file?fileTypeName=Contract");
+      const json = await res.json();
+      const content = json?.data?.content;
+      const contractParsed = parseContractHL7(content ?? "");
+      Object.entries(contractParsed as object).forEach(([key, value]) => {
+        onValueChange(key, value as string);
+      });
+      if (content != null) {
+        setLoadedFileContent(content);
+        setShowViewDataModal(true);
+        toast({ title: "Đã tải file Contract", description: "Nội dung file đã lưu được hiển thị.", duration: 2000 });
+      } else {
+        toast({
+          title: "Chưa có file",
+          description: "Chưa có file Contract nào được lưu.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch {
+      toast({
+        title: "Lỗi tải file",
+        description: "Không thể tải nội dung file từ server.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
@@ -76,10 +106,9 @@ export default function ContractTable({
   };
 
   const getFormattedData = () => {
-    console.log(`Formatting data as: ${activeFileType}`);
     switch (activeFileType) {
       case "HL7":
-        return formatAsPipeDelimited(data, duplicateOption === "Normal" ? 1 : duplicateOption);
+        return formatAsPipeDelimited(data, numberOfItems);
       case "x12850":
         return formatAsX12(data);
       case "Tabular":
@@ -97,23 +126,18 @@ export default function ContractTable({
   return (
     <>
       <div className="w-full">
-        <form className="max-w-xs mb-[10px]">
-          <select
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            value={
-              duplicateOption === "Normal"
-                ? "Normal"
-                : `Create-${formatNumberShort(duplicateOption)}`
-            }
-            onChange={handleDuplicateChange}
-          >
-            <option value="Normal">Normal</option>
-            <option value="Create-10k">Create 10k item</option>
-            <option value="Create-50k">Create 50k item</option>
-            <option value="Create-100k">Create 100k item</option>
-            <option value="Create-200k">Create 200k item</option>
-          </select>
-         
+        <form className="mb-[10px] flex items-end gap-4">
+          <div className="w-full max-w-sm relative mt-4">
+            <label className="block mb-2 text-sm text-slate-600">Number of items to create</label>
+            <input
+              type="text"
+              value={numberOfItems}
+              onChange={(e) => handleNumberOfItemsChange(e.target.value)}
+              onBlur={handleBlur}
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="1"
+            />
+          </div>
         </form>
         <table className="w-full border-collapse table-fixed">
           <thead>
@@ -182,6 +206,13 @@ export default function ContractTable({
           Create file
         </button>
         <button
+          onClick={handleLoadFile}
+          className="text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-amber-600 dark:hover:bg-amber-700 dark:focus:ring-amber-800"
+          type="button"
+        >
+          Load
+        </button>
+        <button
           onClick={openViewDataModal}
           className="text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
           type="button"
@@ -194,6 +225,7 @@ export default function ContractTable({
             open={showModal}
             typeFile="contract"
             data={resultHL7Text}
+            numbers_created={numberOfItems}
           />
         )}
         {showViewDataModal && (
@@ -201,6 +233,7 @@ export default function ContractTable({
             onClose={closeViewDataModal}
             open={showViewDataModal}
             data={data}
+            rawContent={loadedFileContent}
           />
         )}
       </div>
